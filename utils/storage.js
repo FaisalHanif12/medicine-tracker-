@@ -67,6 +67,51 @@ export const deleteMedicine = async (id) => {
   }
 };
 
+// Update medicine entry
+export const updateMedicine = async (id, updatedMedicine) => {
+  try {
+    const medicines = await getMedicines();
+    const updatedMedicines = medicines.map(medicine => 
+      medicine.id === id 
+        ? { ...medicine, ...updatedMedicine, updatedAt: new Date().toISOString() }
+        : medicine
+    );
+    await AsyncStorage.setItem(MEDICINES_KEY, JSON.stringify(updatedMedicines));
+    return updatedMedicines.find(m => m.id === id);
+  } catch (error) {
+    console.error('Error updating medicine:', error);
+    throw error;
+  }
+};
+
+// Toggle favorite status
+export const toggleFavorite = async (id) => {
+  try {
+    const medicines = await getMedicines();
+    const updatedMedicines = medicines.map(medicine => 
+      medicine.id === id 
+        ? { ...medicine, isFavorite: !medicine.isFavorite, updatedAt: new Date().toISOString() }
+        : medicine
+    );
+    await AsyncStorage.setItem(MEDICINES_KEY, JSON.stringify(updatedMedicines));
+    return updatedMedicines.find(m => m.id === id);
+  } catch (error) {
+    console.error('Error toggling favorite:', error);
+    throw error;
+  }
+};
+
+// Get favorite medicines
+export const getFavoriteMedicines = async () => {
+  try {
+    const medicines = await getMedicines();
+    return medicines.filter(medicine => medicine.isFavorite);
+  } catch (error) {
+    console.error('Error getting favorite medicines:', error);
+    return [];
+  }
+};
+
 // Clear all medicines (for testing)
 export const clearAllMedicines = async () => {
   try {

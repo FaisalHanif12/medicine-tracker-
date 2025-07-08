@@ -15,6 +15,7 @@ import { Picker } from '@react-native-picker/picker';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { saveMedicine } from '../utils/storage';
+import { useCustomAlert } from '../components/CustomAlert';
 
 const { width } = Dimensions.get('window');
 
@@ -25,6 +26,7 @@ const AddMedicineScreen = ({ navigation }) => {
   const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const { showAlert, AlertComponent } = useCustomAlert();
 
   const animalTypes = ['Cow', 'Goat', 'Hyfer', 'Buffalo', 'Sheep'];
 
@@ -53,7 +55,12 @@ const AddMedicineScreen = ({ navigation }) => {
 
   const pickImage = async () => {
     if (images.length >= 3) {
-      Alert.alert('Limit Reached', 'You can only add up to 3 images');
+      showAlert({
+        type: 'warning',
+        title: 'Image Limit Reached',
+        message: 'You can only add up to 3 images per medicine.',
+        confirmText: 'Got it',
+      });
       return;
     }
 
@@ -73,7 +80,12 @@ const AddMedicineScreen = ({ navigation }) => {
         }
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to pick image');
+      showAlert({
+        type: 'error',
+        title: 'Image Selection Failed',
+        message: 'We couldn\'t select the image. Please try again.',
+        confirmText: 'Try Again',
+      });
     }
   };
 
@@ -95,30 +107,33 @@ const AddMedicineScreen = ({ navigation }) => {
         animal: animalType,
         details: medicineDetails.trim(),
         images: images,
+        isFavorite: false,
       };
 
       await saveMedicine(medicineData);
 
-      Alert.alert(
-        'Success',
-        'Medicine added successfully!',
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              // Reset form
-              setMedicineName('');
-              setAnimalType('');
-              setMedicineDetails('');
-              setImages([]);
-              setErrors({});
-              navigation.goBack();
-            },
-          },
-        ]
-      );
+      showAlert({
+        type: 'success',
+        title: '🎉 Medicine Added Successfully!',
+        message: 'Your medicine has been saved to the database.',
+        confirmText: 'Awesome!',
+        onConfirm: () => {
+          // Reset form
+          setMedicineName('');
+          setAnimalType('');
+          setMedicineDetails('');
+          setImages([]);
+          setErrors({});
+          navigation.goBack();
+        },
+      });
     } catch (error) {
-      Alert.alert('Error', 'Failed to save medicine. Please try again.');
+      showAlert({
+        type: 'error',
+        title: 'Save Failed',
+        message: 'We couldn\'t save your medicine. Please check your information and try again.',
+        confirmText: 'Try Again',
+      });
     }
 
     setLoading(false);
@@ -265,6 +280,7 @@ const AddMedicineScreen = ({ navigation }) => {
           )}
         </TouchableOpacity>
       </View>
+      <AlertComponent />
     </ScrollView>
   );
 };

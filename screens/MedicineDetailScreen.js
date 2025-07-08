@@ -9,9 +9,13 @@ import {
   Dimensions,
   StyleSheet,
   Alert,
+  TextInput,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { deleteMedicine } from '../utils/storage';
+import { deleteMedicine, updateMedicine } from '../utils/storage';
+import { useCustomAlert } from '../components/CustomAlert';
+import * as ImagePicker from 'expo-image-picker';
+import { Picker } from '@react-native-picker/picker';
 
 const { width, height } = Dimensions.get('window');
 
@@ -19,6 +23,9 @@ const MedicineDetailScreen = ({ route, navigation }) => {
   const { medicine } = route.params;
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [imageModalVisible, setImageModalVisible] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedMedicine, setEditedMedicine] = useState(medicine);
+  const { showAlert, AlertComponent } = useCustomAlert();
 
   const getAnimalIcon = (animal) => {
     switch (animal) {
@@ -37,33 +44,103 @@ const MedicineDetailScreen = ({ route, navigation }) => {
   };
 
   const handleDeleteMedicine = () => {
-    Alert.alert(
-      'Delete Medicine',
-      'Are you sure you want to delete this medicine entry? This action cannot be undone.',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
+    showAlert({
+      type: 'confirm',
+      title: '🗑️ Delete Medicine',
+      message: 'Are you sure you want to delete this medicine entry? This action cannot be undone.',
+      showCancel: true,
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      onConfirm: async () => {
+        try {
+          await deleteMedicine(medicine.id);
+          showAlert({
+            type: 'success',
+            title: '✅ Deleted Successfully',
+            message: 'Medicine has been removed from your database.',
+            confirmText: 'OK',
+            onConfirm: () => navigation.goBack(),
+          });
+        } catch (error) {
+          showAlert({
+            type: 'error',
+            title: 'Delete Failed',
+            message: 'We couldn\'t delete the medicine. Please try again.',
+            confirmText: 'Try Again',
+          });
+        }
+      },
+    });
+  };
+
+  const handleEditMedicine = () => {
+    setIsEditing(true);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEditedMedicine(medicine);
+  };
+
+  const handleSaveEdit = async () => {
+    try {
+      const updatedMedicine = await updateMedicine(medicine.id, editedMedicine);
+      showAlert({
+        type: 'success',
+        title: '✅ Updated Successfully',
+        message: 'Your medicine information has been updated.',
+        confirmText: 'Great!',
+        onConfirm: () => {
+          setIsEditing(false);
+          navigation.setParams({ medicine: updatedMedicine });
         },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await deleteMedicine(medicine.id);
-              Alert.alert('Success', 'Medicine deleted successfully', [
-                {
-                  text: 'OK',
-                  onPress: () => navigation.goBack(),
-                },
-              ]);
-            } catch (error) {
-              Alert.alert('Error', 'Failed to delete medicine');
-            }
-          },
-        },
-      ]
-    );
+      });
+    } catch (error) {
+      showAlert({
+        type: 'error',
+        title: 'Update Failed',
+        message: 'We couldn\'t save your changes. Please try again.',
+        confirmText: 'Try Again',
+      });
+    }
+  };
+
+  const handleAddImage = async () => {
+    if (editedMedicine.images && editedMedicine.images.length >= 3) {
+      showAlert({
+        type: 'warning',
+        title: 'Image Limit Reached',
+        message: 'You can only add up to 3 images per medicine.',
+        confirmText: 'OK',
+      });
+      return;
+    }
+
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+      });
+
+      if (!result.canceled) {
+        const newImages = [...(editedMedicine.images || []), result.assets[0].uri];
+        setEditedMedicine(prev => ({ ...prev, images: newImages }));
+      }
+    } catch (error) {
+      showAlert({
+        type: 'error',
+        title: 'Image Selection Failed',
+        message: 'We couldn\'t add the image. Please try again.',
+        confirmText: 'OK',
+      });
+    }
+  };
+
+  const handleRemoveImage = (index) => {
+    const newImages = editedMedicine.images.filter((_, i) => i !== index);
+    setEditedMedicine(prev => ({ ...prev, images: newImages }));
   };
 
   const renderImage = (uri, index) => (
@@ -95,32 +172,125 @@ const MedicineDetailScreen = ({ route, navigation }) => {
         
         {/* Action Buttons */}
         <View style={styles.actionButtons}>
-          <TouchableOpacity
-            style={styles.deleteButton}
-            onPress={handleDeleteMedicine}
-          >
-            <Ionicons name="trash-outline" size={24} color="#FF4444" />
-          </TouchableOpacity>
+          {isEditing ? (
+            <>
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={handleCancelEdit}
+              >
+                <Ionicons name="close-outline" size={24} color="#6B7280" />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.saveButton}
+                onPress={handleSaveEdit}
+              >
+                <Ionicons name="checkmark-outline" size={24} color="#10B981" />
+              </TouchableOpacity>
+            </>
+          ) : (
+            <>
+              <TouchableOpacity
+                style={styles.editButton}
+                onPress={handleEditMedicine}
+              >
+                <Ionicons name="create-outline" size={24} color="#3B82F6" />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.deleteButton}
+                onPress={handleDeleteMedicine}
+              >
+                <Ionicons name="trash-outline" size={24} color="#EF4444" />
+              </TouchableOpacity>
+            </>
+          )}
         </View>
       </View>
 
       {/* Medicine Details Section */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>📝 Medicine Details</Text>
-        <View style={styles.detailsContainer}>
-          <Text style={styles.detailsText}>{medicine.details}</Text>
-        </View>
+        {isEditing ? (
+          <View style={styles.editContainer}>
+            <Text style={styles.editLabel}>Medicine Name</Text>
+            <TextInput
+              style={styles.editInput}
+              value={editedMedicine.name}
+              onChangeText={(text) => setEditedMedicine(prev => ({ ...prev, name: text }))}
+              placeholder="Enter medicine name"
+            />
+            
+            <Text style={styles.editLabel}>Animal Type</Text>
+            <View style={styles.pickerContainer}>
+              <Picker
+                selectedValue={editedMedicine.animal}
+                onValueChange={(value) => setEditedMedicine(prev => ({ ...prev, animal: value }))}
+                style={styles.picker}
+              >
+                <Picker.Item label="Cow" value="Cow" />
+                <Picker.Item label="Goat" value="Goat" />
+                <Picker.Item label="Hyfer" value="Hyfer" />
+                <Picker.Item label="Buffalo" value="Buffalo" />
+                <Picker.Item label="Sheep" value="Sheep" />
+              </Picker>
+            </View>
+            
+            <Text style={styles.editLabel}>Medicine Details</Text>
+            <TextInput
+              style={styles.editTextArea}
+              value={editedMedicine.details}
+              onChangeText={(text) => setEditedMedicine(prev => ({ ...prev, details: text }))}
+              placeholder="Enter dosage, purpose, side effects, etc."
+              multiline
+              numberOfLines={4}
+              textAlignVertical="top"
+            />
+          </View>
+        ) : (
+          <View style={styles.detailsContainer}>
+            <Text style={styles.detailsText}>{medicine.details}</Text>
+          </View>
+        )}
       </View>
 
       {/* Images Section */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>
-          📸 Medicine Images ({medicine.images?.length || 0})
+          📸 Medicine Images ({isEditing ? editedMedicine.images?.length || 0 : medicine.images?.length || 0})
         </Text>
         
-        {medicine.images && medicine.images.length > 0 ? (
+        {isEditing && (
+          <TouchableOpacity
+            style={styles.addImageButton}
+            onPress={handleAddImage}
+          >
+            <Ionicons name="add-circle-outline" size={20} color="#3B82F6" />
+            <Text style={styles.addImageText}>Add Image</Text>
+          </TouchableOpacity>
+        )}
+        
+        {(isEditing ? editedMedicine.images : medicine.images) && (isEditing ? editedMedicine.images : medicine.images).length > 0 ? (
           <View style={styles.imagesGrid}>
-            {medicine.images.map((uri, index) => renderImage(uri, index))}
+            {(isEditing ? editedMedicine.images : medicine.images).map((uri, index) => (
+              <View key={index} style={styles.imageContainer}>
+                <TouchableOpacity
+                  onPress={() => openImageModal(index)}
+                  activeOpacity={0.8}
+                >
+                  <Image source={{ uri }} style={styles.medicineImage} />
+                  <View style={styles.imageOverlay}>
+                    <Ionicons name="expand-outline" size={24} color="#FFFFFF" />
+                  </View>
+                </TouchableOpacity>
+                {isEditing && (
+                  <TouchableOpacity
+                    style={styles.removeImageButton}
+                    onPress={() => handleRemoveImage(index)}
+                  >
+                    <Ionicons name="close-circle" size={24} color="#EF4444" />
+                  </TouchableOpacity>
+                )}
+              </View>
+            ))}
           </View>
         ) : (
           <View style={styles.noImagesContainer}>
@@ -224,6 +394,7 @@ const MedicineDetailScreen = ({ route, navigation }) => {
           </TouchableOpacity>
         </View>
       </Modal>
+      <AlertComponent />
     </ScrollView>
   );
 };
@@ -268,11 +439,28 @@ const styles = StyleSheet.create({
   },
   actionButtons: {
     marginLeft: 15,
+    flexDirection: 'row',
+    gap: 10,
+  },
+  editButton: {
+    padding: 10,
+    borderRadius: 8,
+    backgroundColor: '#EFF6FF',
   },
   deleteButton: {
     padding: 10,
     borderRadius: 8,
-    backgroundColor: '#FFE5E5',
+    backgroundColor: '#FEF2F2',
+  },
+  saveButton: {
+    padding: 10,
+    borderRadius: 8,
+    backgroundColor: '#ECFDF5',
+  },
+  cancelButton: {
+    padding: 10,
+    borderRadius: 8,
+    backgroundColor: '#F9FAFB',
   },
   section: {
     backgroundColor: '#FFFFFF',
@@ -302,6 +490,75 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#333',
     lineHeight: 24,
+  },
+  editContainer: {
+    backgroundColor: '#F8F9FA',
+    padding: 15,
+    borderRadius: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: '#3B82F6',
+  },
+  editLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#374151',
+    marginBottom: 8,
+    marginTop: 15,
+  },
+  editInput: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    color: '#333',
+  },
+  editTextArea: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    color: '#333',
+    height: 100,
+  },
+  pickerContainer: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  picker: {
+    height: 50,
+  },
+  addImageButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#EFF6FF',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 15,
+  },
+  addImageText: {
+    marginLeft: 8,
+    fontSize: 16,
+    color: '#3B82F6',
+    fontWeight: '500',
+  },
+  removeImageButton: {
+    position: 'absolute',
+    top: -8,
+    right: -8,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   imagesGrid: {
     flexDirection: 'row',

@@ -15,7 +15,8 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons, MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
-import { getMedicines } from '../utils/storage';
+import { getMedicines, toggleFavorite } from '../utils/storage';
+import { useCustomAlert } from '../components/CustomAlert';
 
 const { width } = Dimensions.get('window');
 
@@ -25,13 +26,20 @@ const ViewMedicinesScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const scrollY = new Animated.Value(0);
+  const { showAlert, AlertComponent } = useCustomAlert();
 
   const loadMedicines = async () => {
     try {
       const medicineData = await getMedicines();
       setMedicines(medicineData);
     } catch (error) {
-      Alert.alert('Error', 'Failed to load medicines');
+      showAlert({
+        type: 'error',
+        title: 'Loading Error',
+        message: 'We couldn\'t load your medicines right now. Please check your connection and try again.',
+        confirmText: 'Retry',
+        onConfirm: () => loadMedicines(),
+      });
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -72,6 +80,32 @@ const ViewMedicinesScreen = ({ navigation }) => {
 
   const navigateToDetail = (medicine) => {
     navigation.navigate('MedicineDetail', { medicine });
+  };
+
+  const handleToggleFavorite = async (medicineId) => {
+    try {
+      const updatedMedicine = await toggleFavorite(medicineId);
+      const updatedMedicines = medicines.map(med => 
+        med.id === medicineId ? updatedMedicine : med
+      );
+      setMedicines(updatedMedicines);
+      
+      showAlert({
+        type: 'success',
+        title: updatedMedicine.isFavorite ? '❤️ Added to Favorites!' : '💔 Removed from Favorites',
+        message: updatedMedicine.isFavorite 
+          ? `${updatedMedicine.name} has been added to your favorites list.`
+          : `${updatedMedicine.name} has been removed from your favorites.`,
+        confirmText: 'Great!',
+      });
+    } catch (error) {
+      showAlert({
+        type: 'error',
+        title: 'Oops! Something went wrong',
+        message: 'We couldn\'t update your favorites right now. Please try again.',
+        confirmText: 'Try Again',
+      });
+    }
   };
 
   const getMedicineStats = () => {
@@ -121,9 +155,20 @@ const ViewMedicinesScreen = ({ navigation }) => {
                   {item.images?.length || 0} photos
                 </Text>
               </View>
-              <View style={styles.cardActions}>
-                <MaterialIcons name="favorite-border" size={20} color="#FF6B9D" />
-              </View>
+              <TouchableOpacity 
+                style={styles.cardActions}
+                onPress={(e) => {
+                  e.stopPropagation();
+                  handleToggleFavorite(item.id);
+                }}
+                activeOpacity={0.7}
+              >
+                <MaterialIcons 
+                  name={item.isFavorite ? "favorite" : "favorite-border"} 
+                  size={20} 
+                  color={item.isFavorite ? "#FF6B9D" : "#D1D5DB"} 
+                />
+              </TouchableOpacity>
             </View>
           </View>
 
@@ -308,9 +353,18 @@ const ViewMedicinesScreen = ({ navigation }) => {
                     <Text style={styles.headerWelcome}>Good Day! 👋</Text>
                     <Text style={styles.headerTitle}>Medicine Tracker</Text>
                   </View>
-                  <TouchableOpacity style={styles.profileButton}>
-                    <FontAwesome5 name="user-circle" size={28} color="#FFFFFF" />
-                  </TouchableOpacity>
+                  <View style={styles.headerButtons}>
+                    <TouchableOpacity 
+                      style={styles.favoritesButton}
+                      onPress={() => navigation.navigate('Favorites')}
+                      activeOpacity={0.8}
+                    >
+                      <MaterialIcons name="favorite" size={24} color="#FF6B9D" />
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.profileButton}>
+                      <FontAwesome5 name="user-circle" size={28} color="#FFFFFF" />
+                    </TouchableOpacity>
+                  </View>
                 </View>
                 
                 {renderStatsCard()}
@@ -350,17 +404,20 @@ const ViewMedicinesScreen = ({ navigation }) => {
           </Animated.ScrollView>
         )}
 
-        {/* Modern Floating Action Button */}
-        <View style={styles.fabContainer}>
-          <TouchableOpacity
-            style={styles.modernFab}
-            onPress={() => navigation.navigate('AddMedicine')}
-            activeOpacity={0.9}
-          >
-            <Ionicons name="add" size={24} color="#FFFFFF" />
-          </TouchableOpacity>
-        </View>
+        {/* Modern Floating Action Button - Only show when medicines exist */}
+        {medicines.length > 0 && (
+          <View style={styles.fabContainer}>
+            <TouchableOpacity
+              style={styles.modernFab}
+              onPress={() => navigation.navigate('AddMedicine')}
+              activeOpacity={0.9}
+            >
+              <Ionicons name="add" size={24} color="#FFFFFF" />
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
+      <AlertComponent />
     </>
   );
 };
@@ -423,6 +480,21 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: 'bold',
     color: '#FFFFFF',
+  },
+  headerButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  favoritesButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 107, 157, 0.3)',
   },
   profileButton: {
     width: 44,

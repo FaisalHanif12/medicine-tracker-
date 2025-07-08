@@ -7,6 +7,7 @@ import { Platform } from 'react-native';
 import ViewMedicinesScreen from '../screens/ViewMedicinesScreen';
 import AddMedicineScreen from '../screens/AddMedicineScreen';
 import MedicineDetailScreen from '../screens/MedicineDetailScreen';
+import FavoritesScreen from '../screens/FavoritesScreen';
 
 const Stack = createStackNavigator();
 
@@ -64,6 +65,14 @@ const AppNavigator = () => {
           component={MedicineDetailScreen}
           options={{
             title: '📋 Medicine Details',
+            headerTitleAlign: 'center',
+          }}
+        />
+        <Stack.Screen
+          name="Favorites"
+          component={FavoritesScreen}
+          options={{
+            title: '💖 My Favorites',
             headerTitleAlign: 'center',
           }}
         />
