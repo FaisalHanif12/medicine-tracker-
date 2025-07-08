@@ -351,20 +351,15 @@ const ViewMedicinesScreen = ({ navigation }) => {
                 <View style={styles.headerTop}>
                   <View>
                     <Text style={styles.headerWelcome}>Good Day! 👋</Text>
-                    <Text style={styles.headerTitle}>Medicine Tracker</Text>
+                    <Text style={styles.headerTitle}>Animal Care Hub</Text>
                   </View>
-                  <View style={styles.headerButtons}>
-                    <TouchableOpacity 
-                      style={styles.favoritesButton}
-                      onPress={() => navigation.navigate('Favorites')}
-                      activeOpacity={0.8}
-                    >
-                      <MaterialIcons name="favorite" size={24} color="#FF6B9D" />
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.profileButton}>
-                      <FontAwesome5 name="user-circle" size={28} color="#FFFFFF" />
-                    </TouchableOpacity>
-                  </View>
+                  <TouchableOpacity 
+                    style={styles.favoritesButton}
+                    onPress={() => navigation.navigate('Favorites')}
+                    activeOpacity={0.8}
+                  >
+                    <MaterialIcons name="favorite" size={24} color="#FF6B9D" />
+                  </TouchableOpacity>
                 </View>
                 
                 {renderStatsCard()}
@@ -481,11 +476,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#FFFFFF',
   },
-  headerButtons: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
   favoritesButton: {
     width: 40,
     height: 40,
@@ -495,14 +485,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderColor: 'rgba(255, 107, 157, 0.3)',
-  },
-  profileButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
   },
 
   // Stats Section
