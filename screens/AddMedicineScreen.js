@@ -53,7 +53,7 @@ const AddMedicineScreen = ({ navigation }) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const pickImage = async () => {
+  const showImagePicker = () => {
     if (images.length >= 3) {
       showAlert({
         type: 'warning',
@@ -64,6 +64,65 @@ const AddMedicineScreen = ({ navigation }) => {
       return;
     }
 
+    showAlert({
+      type: 'info',
+      title: '📸 Add Photo',
+      message: 'How would you like to add a photo?',
+      showCancel: true,
+      confirmText: '📷 Take Photo',
+      cancelText: '🖼️ Choose from Gallery',
+      onConfirm: () => takePhoto(),
+      onCancel: () => pickFromGallery(),
+    });
+  };
+
+  const takePhoto = async () => {
+    try {
+      // Request camera permissions
+      const cameraPermission = await ImagePicker.requestCameraPermissionsAsync();
+      
+      if (cameraPermission.status !== 'granted') {
+        showAlert({
+          type: 'warning',
+          title: 'Camera Permission Required',
+          message: 'We need camera access to take photos. Please enable camera permissions in your device settings.',
+          confirmText: 'OK',
+        });
+        return;
+      }
+
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+      });
+
+      if (!result.canceled) {
+        setImages([...images, result.assets[0].uri]);
+        // Clear image error if exists
+        if (errors.images) {
+          setErrors({ ...errors, images: null });
+        }
+        
+        showAlert({
+          type: 'success',
+          title: '📸 Photo Captured!',
+          message: 'Your photo has been added successfully.',
+          confirmText: 'Great!',
+        });
+      }
+    } catch (error) {
+      showAlert({
+        type: 'error',
+        title: 'Camera Error',
+        message: 'We couldn\'t access the camera. Please try again.',
+        confirmText: 'Try Again',
+      });
+    }
+  };
+
+  const pickFromGallery = async () => {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -82,8 +141,8 @@ const AddMedicineScreen = ({ navigation }) => {
     } catch (error) {
       showAlert({
         type: 'error',
-        title: 'Image Selection Failed',
-        message: 'We couldn\'t select the image. Please try again.',
+        title: 'Gallery Error',
+        message: 'We couldn\'t access your gallery. Please try again.',
         confirmText: 'Try Again',
       });
     }
@@ -229,7 +288,7 @@ const AddMedicineScreen = ({ navigation }) => {
           
           <TouchableOpacity
             style={[styles.imagePickerButton, errors.images && styles.inputError]}
-            onPress={pickImage}
+            onPress={showImagePicker}
             disabled={images.length >= 3}
           >
             <Ionicons
@@ -238,7 +297,7 @@ const AddMedicineScreen = ({ navigation }) => {
               color={images.length >= 3 ? '#ccc' : '#4A90E2'}
             />
             <Text style={[styles.imagePickerText, images.length >= 3 && styles.disabledText]}>
-              {images.length === 0 ? 'Add Image' : `Add Image (${3 - images.length} remaining)`}
+              {images.length === 0 ? '📸 Add Photo (Camera/Gallery)' : `📸 Add Photo (${3 - images.length} remaining)`}
             </Text>
           </TouchableOpacity>
 
