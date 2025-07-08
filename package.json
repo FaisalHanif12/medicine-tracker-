@@ -22,7 +22,8 @@
     "expo-image-picker": "~16.0.2",
     "@expo/vector-icons": "^14.0.4",
     "@react-native-picker/picker": "2.9.0",
-    "react-native-reanimated": "~3.16.1"
+    "react-native-reanimated": "~3.16.1",
+    "expo-linear-gradient": "~14.0.1"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0"
