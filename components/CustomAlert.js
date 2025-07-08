@@ -244,12 +244,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     paddingHorizontal: 25,
     paddingBottom: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   button: {
     flex: 1,
     paddingVertical: 15,
     borderRadius: 12,
     alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 50,
   },
   cancelButton: {
     backgroundColor: '#F3F4F6',

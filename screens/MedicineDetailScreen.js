@@ -130,19 +130,49 @@ const MedicineDetailScreen = ({ route, navigation }) => {
 
   const takePhotoEdit = async () => {
     try {
-      // Request camera permissions
-      const cameraPermission = await ImagePicker.requestCameraPermissionsAsync();
+      // Check current camera permissions
+      const { status: currentStatus } = await ImagePicker.getCameraPermissionsAsync();
       
-      if (cameraPermission.status !== 'granted') {
+      if (currentStatus === 'granted') {
+        // Permissions already granted, proceed with camera
+        await launchCameraEdit();
+      } else {
+        // Need to request permissions with custom alert first
         showAlert({
-          type: 'warning',
-          title: 'Camera Permission Required',
-          message: 'We need camera access to take photos. Please enable camera permissions in your device settings.',
-          confirmText: 'OK',
+          type: 'info',
+          title: '📷 Camera Access Required',
+          message: 'We need access to your camera to take photos of medicines. This helps you document your animal care records.',
+          confirmText: 'Grant Access',
+          showCancel: true,
+          cancelText: 'Not Now',
+          onConfirm: async () => {
+            const { status } = await ImagePicker.requestCameraPermissionsAsync();
+            
+            if (status === 'granted') {
+              await launchCameraEdit();
+            } else {
+              showAlert({
+                type: 'warning',
+                title: '⚠️ Permission Denied',
+                message: 'Camera access is required to take photos. You can enable it manually in your device settings under App Permissions.',
+                confirmText: 'OK',
+              });
+            }
+          },
         });
-        return;
       }
+    } catch (error) {
+      showAlert({
+        type: 'error',
+        title: 'Camera Error',
+        message: 'We couldn\'t access the camera. Please try again.',
+        confirmText: 'Try Again',
+      });
+    }
+  };
 
+  const launchCameraEdit = async () => {
+    try {
       const result = await ImagePicker.launchCameraAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
@@ -165,7 +195,7 @@ const MedicineDetailScreen = ({ route, navigation }) => {
       showAlert({
         type: 'error',
         title: 'Camera Error',
-        message: 'We couldn\'t access the camera. Please try again.',
+        message: 'We couldn\'t take the photo. Please try again.',
         confirmText: 'Try Again',
       });
     }
