@@ -15,7 +15,8 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSPhotoLibraryUsageDescription": "This app needs access to photo library to upload medicine images."
+        "NSPhotoLibraryUsageDescription": "This app needs access to photo library to upload medicine images.",
+        "NSCameraUsageDescription": "This app needs access to camera to take photos of medicines for documentation."
       }
     },
     "android": {
@@ -28,7 +29,8 @@
       "edgeToEdgeEnabled": true,
       "permissions": [
         "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE"
+        "WRITE_EXTERNAL_STORAGE",
+        "CAMERA"
       ]
     },
     "web": {

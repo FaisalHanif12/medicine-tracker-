@@ -178,20 +178,33 @@ const MedicineDetailScreen = ({ route, navigation }) => {
         allowsEditing: true,
         aspect: [4, 3],
         quality: 0.8,
+        base64: false,
+        exif: false,
       });
 
-      if (!result.canceled) {
-        const newImages = [...(editedMedicine.images || []), result.assets[0].uri];
-        setEditedMedicine(prev => ({ ...prev, images: newImages }));
-        
-        showAlert({
-          type: 'success',
-          title: '📸 Photo Captured!',
-          message: 'Your photo has been added successfully.',
-          confirmText: 'Great!',
-        });
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const imageUri = result.assets[0].uri;
+        if (imageUri) {
+          const newImages = [...(editedMedicine.images || []), imageUri];
+          setEditedMedicine(prev => ({ ...prev, images: newImages }));
+          
+          showAlert({
+            type: 'success',
+            title: '📸 Photo Captured!',
+            message: 'Your photo has been added successfully.',
+            confirmText: 'Great!',
+          });
+        } else {
+          showAlert({
+            type: 'warning',
+            title: 'Photo Issue',
+            message: 'The photo was taken but couldn\'t be processed. Please try again.',
+            confirmText: 'OK',
+          });
+        }
       }
     } catch (error) {
+      console.error('Camera error:', error);
       showAlert({
         type: 'error',
         title: 'Camera Error',
@@ -208,13 +221,26 @@ const MedicineDetailScreen = ({ route, navigation }) => {
         allowsEditing: true,
         aspect: [4, 3],
         quality: 0.8,
+        base64: false,
+        exif: false,
       });
 
-      if (!result.canceled) {
-        const newImages = [...(editedMedicine.images || []), result.assets[0].uri];
-        setEditedMedicine(prev => ({ ...prev, images: newImages }));
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const imageUri = result.assets[0].uri;
+        if (imageUri) {
+          const newImages = [...(editedMedicine.images || []), imageUri];
+          setEditedMedicine(prev => ({ ...prev, images: newImages }));
+        } else {
+          showAlert({
+            type: 'warning',
+            title: 'Image Issue',
+            message: 'The image was selected but couldn\'t be processed. Please try again.',
+            confirmText: 'OK',
+          });
+        }
       }
     } catch (error) {
+      console.error('Gallery error:', error);
       showAlert({
         type: 'error',
         title: 'Gallery Error',
