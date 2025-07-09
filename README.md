@@ -1,4 +1,4 @@
-# 🐄 Animal Medicine Tracker
+# 💊 MediCare
 
 A React Native Expo mobile application for dairy farms to track medicines prescribed by doctors for different animals like goats, heifers, and cows. The app works offline and uses AsyncStorage for local data persistence.
 
