@@ -10,6 +10,7 @@ import {
   StyleSheet,
   Alert,
   TextInput,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { deleteMedicine, updateMedicine } from '../utils/storage';
@@ -116,6 +117,13 @@ const MedicineDetailScreen = ({ route, navigation }) => {
       return;
     }
 
+    // Web-specific behavior - only show gallery option
+    if (Platform.OS === 'web') {
+      pickFromGalleryEdit();
+      return;
+    }
+
+    // Mobile behavior - show both options
     showAlert({
       type: 'info',
       title: '📸 Add Photo',
@@ -130,6 +138,17 @@ const MedicineDetailScreen = ({ route, navigation }) => {
 
   const takePhotoEdit = async () => {
     try {
+      // Web compatibility check
+      if (Platform.OS === 'web') {
+        showAlert({
+          type: 'info',
+          title: '📱 Camera Not Available',
+          message: 'Camera functionality is not available on web. Please use the gallery option to upload images.',
+          confirmText: 'OK',
+        });
+        return;
+      }
+
       // Check current camera permissions
       const { status: currentStatus } = await ImagePicker.getCameraPermissionsAsync();
       

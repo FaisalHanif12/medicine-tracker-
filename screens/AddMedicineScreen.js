@@ -10,6 +10,7 @@ import {
   StyleSheet,
   Dimensions,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import * as ImagePicker from 'expo-image-picker';
@@ -56,6 +57,16 @@ const AddMedicineScreen = ({ navigation }) => {
   // Test function to help diagnose camera issues
   const testCameraOnly = async () => {
     try {
+      if (Platform.OS === 'web') {
+        showAlert({
+          type: 'info',
+          title: '🧪 Camera Test',
+          message: 'Camera testing is not available on web platform.',
+          confirmText: 'OK',
+        });
+        return;
+      }
+
       console.log('🧪 Testing camera only...');
       const result = await ImagePicker.launchCameraAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -81,7 +92,7 @@ const AddMedicineScreen = ({ navigation }) => {
     }
   };
 
-  const showImagePicker = () => {
+    const showImagePicker = () => {
     if (images.length >= 3) {
       showAlert({
         type: 'warning',
@@ -92,20 +103,38 @@ const AddMedicineScreen = ({ navigation }) => {
       return;
     }
 
-          showAlert({
-        type: 'info',
-        title: '📸 Add Photo',
-        message: 'How would you like to add a photo?',
-        showCancel: true,
-        confirmText: '📷 Take Photo',
-        cancelText: '🖼️ Choose from Gallery',
-        onConfirm: () => takePhoto(),
-        onCancel: () => pickFromGallery(),
-      });
+    // Web-specific behavior - only show gallery option
+    if (Platform.OS === 'web') {
+      pickFromGallery();
+      return;
+    }
+
+    // Mobile behavior - show both camera and gallery options
+    showAlert({
+      type: 'info',
+      title: '📸 Add Photo',
+      message: 'How would you like to add a photo?',
+      showCancel: true,
+      confirmText: '📷 Take Photo',
+      cancelText: '🖼️ Choose from Gallery',
+      onConfirm: () => takePhoto(),
+      onCancel: () => pickFromGallery(),
+    });
   };
 
   const takePhoto = async () => {
     try {
+      // Web compatibility check
+      if (Platform.OS === 'web') {
+        showAlert({
+          type: 'info',
+          title: '📱 Camera Not Available',
+          message: 'Camera functionality is not available on web. Please use the gallery option to upload images.',
+          confirmText: 'OK',
+        });
+        return;
+      }
+
       // Check current camera permissions
       const { status: currentStatus } = await ImagePicker.getCameraPermissionsAsync();
       
@@ -396,18 +425,25 @@ const AddMedicineScreen = ({ navigation }) => {
               color={images.length >= 3 ? '#ccc' : '#4A90E2'}
             />
             <Text style={[styles.imagePickerText, images.length >= 3 && styles.disabledText]}>
-              {images.length === 0 ? '📸 Add Photo (Camera/Gallery)' : `📸 Add Photo (${3 - images.length} remaining)`}
+              {images.length === 0 
+                ? Platform.OS === 'web' 
+                  ? '🖼️ Add Photo (Gallery)' 
+                  : '📸 Add Photo (Camera/Gallery)'
+                : `📸 Add Photo (${3 - images.length} remaining)`
+              }
             </Text>
           </TouchableOpacity>
 
-          {/* Debug Test Button - Remove after testing */}
-          <TouchableOpacity
-            style={styles.testButton}
-            onPress={testCameraOnly}
-          >
-            <Ionicons name="bug-outline" size={20} color="#FF6B6B" />
-            <Text style={styles.testButtonText}>🧪 Test Camera (Debug)</Text>
-          </TouchableOpacity>
+          {/* Debug Test Button - Remove after testing, Mobile only */}
+          {Platform.OS !== 'web' && (
+            <TouchableOpacity
+              style={styles.testButton}
+              onPress={testCameraOnly}
+            >
+              <Ionicons name="bug-outline" size={20} color="#FF6B6B" />
+              <Text style={styles.testButtonText}>🧪 Test Camera (Debug)</Text>
+            </TouchableOpacity>
+          )}
 
           {errors.images && (
             <Text style={styles.errorText}>{errors.images}</Text>
