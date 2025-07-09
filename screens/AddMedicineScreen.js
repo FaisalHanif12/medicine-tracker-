@@ -53,6 +53,34 @@ const AddMedicineScreen = ({ navigation }) => {
     return Object.keys(newErrors).length === 0;
   };
 
+  // Test function to help diagnose camera issues
+  const testCameraOnly = async () => {
+    try {
+      console.log('🧪 Testing camera only...');
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: false, // Disable editing to simplify
+        quality: 0.5, // Lower quality for testing
+      });
+      
+      console.log('🧪 Test result:', result);
+      showAlert({
+        type: 'info',
+        title: '🧪 Camera Test',
+        message: `Test ${result.canceled ? 'canceled' : 'completed'}. Check console for details.`,
+        confirmText: 'OK',
+      });
+    } catch (error) {
+      console.error('🧪 Camera test error:', error);
+      showAlert({
+        type: 'error',
+        title: '🧪 Camera Test Failed',
+        message: `Error: ${error.message}`,
+        confirmText: 'OK',
+      });
+    }
+  };
+
   const showImagePicker = () => {
     if (images.length >= 3) {
       showAlert({
@@ -64,16 +92,16 @@ const AddMedicineScreen = ({ navigation }) => {
       return;
     }
 
-    showAlert({
-      type: 'info',
-      title: '📸 Add Photo',
-      message: 'How would you like to add a photo?',
-      showCancel: true,
-      confirmText: '📷 Take Photo',
-      cancelText: '🖼️ Choose from Gallery',
-      onConfirm: () => takePhoto(),
-      onCancel: () => pickFromGallery(),
-    });
+          showAlert({
+        type: 'info',
+        title: '📸 Add Photo',
+        message: 'How would you like to add a photo?',
+        showCancel: true,
+        confirmText: '📷 Take Photo',
+        cancelText: '🖼️ Choose from Gallery',
+        onConfirm: () => takePhoto(),
+        onCancel: () => pickFromGallery(),
+      });
   };
 
   const takePhoto = async () => {
@@ -121,31 +149,42 @@ const AddMedicineScreen = ({ navigation }) => {
 
   const launchCamera = async () => {
     try {
+      console.log('📸 Starting camera launch...');
+      
       const result = await ImagePicker.launchCameraAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [4, 3],
-        quality: 0.8,
+        quality: 0.7, // Reduced quality to prevent memory issues
         base64: false,
         exif: false,
+        allowsMultipleSelection: false,
       });
 
+      console.log('📸 Camera result:', result);
+
       if (!result.canceled && result.assets && result.assets.length > 0) {
-        const imageUri = result.assets[0].uri;
-        if (imageUri) {
-          setImages([...images, imageUri]);
+        const asset = result.assets[0];
+        console.log('📸 Image asset:', asset);
+        
+        if (asset && asset.uri) {
+          console.log('📸 Adding image to state...');
+          setImages(prevImages => [...prevImages, asset.uri]);
+          
           // Clear image error if exists
           if (errors.images) {
-            setErrors({ ...errors, images: null });
+            setErrors(prevErrors => ({ ...prevErrors, images: null }));
           }
           
+          console.log('📸 Image successfully added!');
           showAlert({
             type: 'success',
             title: '📸 Photo Captured!',
-            message: 'Your photo has been added successfully.',
+            message: `Your photo has been added successfully. URI: ${asset.uri.substring(0, 50)}...`,
             confirmText: 'Great!',
           });
         } else {
+          console.error('📸 Invalid asset or URI');
           showAlert({
             type: 'warning',
             title: 'Photo Issue',
@@ -153,13 +192,17 @@ const AddMedicineScreen = ({ navigation }) => {
             confirmText: 'OK',
           });
         }
+      } else {
+        console.log('📸 Camera was canceled or no assets');
       }
     } catch (error) {
-      console.error('Camera error:', error);
+      console.error('📸 Camera error details:', error);
+      console.error('📸 Error stack:', error.stack);
+      
       showAlert({
         type: 'error',
         title: 'Camera Error',
-        message: 'We couldn\'t take the photo. Please try again.',
+        message: `We couldn't take the photo. Error: ${error.message || 'Unknown error'}`,
         confirmText: 'Try Again',
       });
     }
@@ -357,6 +400,15 @@ const AddMedicineScreen = ({ navigation }) => {
             </Text>
           </TouchableOpacity>
 
+          {/* Debug Test Button - Remove after testing */}
+          <TouchableOpacity
+            style={styles.testButton}
+            onPress={testCameraOnly}
+          >
+            <Ionicons name="bug-outline" size={20} color="#FF6B6B" />
+            <Text style={styles.testButtonText}>🧪 Test Camera (Debug)</Text>
+          </TouchableOpacity>
+
           {errors.images && (
             <Text style={styles.errorText}>{errors.images}</Text>
           )}
@@ -472,6 +524,23 @@ const styles = StyleSheet.create({
   },
   disabledText: {
     color: '#ccc',
+  },
+  testButton: {
+    backgroundColor: '#FFF5F5',
+    borderWidth: 1,
+    borderColor: '#FFE5E5',
+    borderRadius: 8,
+    padding: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 8,
+  },
+  testButtonText: {
+    marginLeft: 8,
+    fontSize: 14,
+    color: '#FF6B6B',
+    fontWeight: '500',
   },
   imagePreviewContainer: {
     flexDirection: 'row',
