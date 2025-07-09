@@ -4,11 +4,11 @@
     "slug": "MediCare",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/medicare-icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/medicare-splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -20,11 +20,11 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/medicare-adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
       "package": "com.medicare.app",
-      "versionCode": 1,
+      "versionCode": 2,
       "edgeToEdgeEnabled": true,
       "permissions": [
         "READ_EXTERNAL_STORAGE",
@@ -32,7 +32,12 @@
       ]
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/medicare-icon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "ca67fb89-f606-4023-84d4-0d994da5f0cd"
+      }
     }
   }
 }
