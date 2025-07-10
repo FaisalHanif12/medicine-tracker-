@@ -17,7 +17,6 @@ import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { saveMedicine } from '../utils/storage';
 import { useCustomAlert } from '../components/CustomAlert';
-import * as Device from 'expo-device';
 
 const { width } = Dimensions.get('window');
 
@@ -55,110 +54,7 @@ const AddMedicineScreen = ({ navigation }) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  // Device info for debugging
-  const showDeviceInfo = () => {
-    const deviceInfo = {
-      Platform: Platform.OS,
-      Brand: Device.brand,
-      Model: Device.modelName,
-      OS_Version: Device.osVersion,
-      Device_Type: Device.deviceType,
-      Is_Device: Device.isDevice,
-      Screen_Dimensions: `${width}x${Dimensions.get('window').height}`,
-      Expo_SDK: '53.0.17'
-    };
-
-    console.log('📱 DEVICE INFO:', deviceInfo);
-    
-    showAlert({
-      type: 'info',
-      title: '📱 Device Information',
-      message: Object.entries(deviceInfo)
-        .map(([key, value]) => `${key}: ${value}`)
-        .join('\n'),
-      confirmText: 'Test Camera',
-      showCancel: true,
-      cancelText: 'Close',
-      onConfirm: () => testCameraOnly(),
-    });
-  };
-
-  // Test function to help diagnose camera issues
-  const testCameraOnly = async () => {
-    try {
-      if (Platform.OS === 'web') {
-        showAlert({
-          type: 'info',
-          title: '🧪 Camera Test',
-          message: 'Camera testing is not available on web platform.',
-          confirmText: 'OK',
-        });
-        return;
-      }
-
-      console.log('🧪 CAMERA TEST STARTING...');
-      
-      showAlert({
-        type: 'info',
-        title: '🧪 Starting Camera Test',
-        message: 'Testing camera with minimal settings. Watch for crashes or errors.',
-        confirmText: 'Continue',
-        onConfirm: async () => {
-          try {
-            const result = await ImagePicker.launchCameraAsync({
-              mediaTypes: ImagePicker.MediaTypeOptions.Images,
-              allowsEditing: false, // Disable editing to simplify
-              quality: 0.3, // Very low quality for testing
-            });
-            
-            console.log('🧪 CAMERA TEST RESULT:', result);
-            console.log('🧪 Test completed without crash!');
-            
-            showAlert({
-              type: 'success',
-              title: '🧪 Camera Test Success!',
-              message: `Test completed!\nCanceled: ${result.canceled}\nAssets: ${result.assets ? result.assets.length : 'none'}\n\nCamera hardware works! Issue might be in image processing.`,
-              confirmText: 'Show Details',
-              onConfirm: () => {
-                showAlert({
-                  type: 'info',
-                  title: '🧪 Test Details',
-                  message: `Full result: ${JSON.stringify(result, null, 2)}`,
-                  confirmText: 'OK',
-                });
-              },
-            });
-          } catch (testError) {
-            console.error('🧪 CAMERA TEST FAILED:', testError);
-            showAlert({
-              type: 'error',
-              title: '🧪 Camera Test Failed',
-              message: `Camera test crashed!\nError: ${testError.name}\nMessage: ${testError.message}\n\nThis confirms camera hardware issue.`,
-              confirmText: 'Show Error',
-              onConfirm: () => {
-                showAlert({
-                  type: 'error',
-                  title: '🧪 Full Test Error',
-                  message: `${JSON.stringify(testError, Object.getOwnPropertyNames(testError), 2)}`,
-                  confirmText: 'OK',
-                });
-              },
-            });
-          }
-        },
-      });
-    } catch (error) {
-      console.error('🧪 TEST SETUP ERROR:', error);
-      showAlert({
-        type: 'error',
-        title: '🧪 Test Setup Failed',
-        message: `Couldn't even start test: ${error.message}`,
-        confirmText: 'OK',
-      });
-    }
-  };
-
-    const showImagePicker = () => {
+  const showImagePicker = () => {
     if (images.length >= 3) {
       showAlert({
         type: 'warning',
@@ -169,222 +65,8 @@ const AddMedicineScreen = ({ navigation }) => {
       return;
     }
 
-    // Web-specific behavior - only show gallery option
-    if (Platform.OS === 'web') {
-      pickFromGallery();
-      return;
-    }
-
-    // Mobile behavior - show both camera and gallery options
-    showAlert({
-      type: 'info',
-      title: '📸 Add Photo',
-      message: 'How would you like to add a photo?',
-      showCancel: true,
-      confirmText: '📷 Take Photo',
-      cancelText: '🖼️ Choose from Gallery',
-      onConfirm: () => takePhoto(),
-      onCancel: () => pickFromGallery(),
-    });
-  };
-
-  const takePhoto = async () => {
-    try {
-      // Web compatibility check
-      if (Platform.OS === 'web') {
-        showAlert({
-          type: 'info',
-          title: '📱 Camera Not Available',
-          message: 'Camera functionality is not available on web. Please use the gallery option to upload images.',
-          confirmText: 'OK',
-        });
-        return;
-      }
-
-      // Show initial debug alert
-      console.log('🚀 TAKE PHOTO FUNCTION STARTED');
-      showAlert({
-        type: 'info',
-        title: '🚀 Camera Function Started',
-        message: 'takePhoto() function has been called. Watch for when/where the app crashes.',
-        confirmText: 'Continue',
-        onConfirm: async () => {
-          await proceedWithCamera();
-        },
-      });
-    } catch (error) {
-      console.error('❌ ERROR IN TAKE PHOTO WRAPPER:', error);
-      showAlert({
-        type: 'error',
-        title: '❌ Take Photo Wrapper Error',
-        message: `Error occurred before camera launch: ${error.message}`,
-        confirmText: 'OK',
-      });
-    }
-  };
-
-  const proceedWithCamera = async () => {
-    try {
-      console.log('🔍 CHECKING CAMERA PERMISSIONS...');
-
-      // Check current camera permissions
-      const { status: currentStatus } = await ImagePicker.getCameraPermissionsAsync();
-      
-      console.log('🔍 CURRENT PERMISSION STATUS:', currentStatus);
-
-      if (currentStatus === 'granted') {
-        console.log('✅ PERMISSIONS GRANTED, LAUNCHING CAMERA...');
-        // Permissions already granted, proceed with camera
-        await launchCamera();
-      } else {
-        console.log('🚫 PERMISSIONS NOT GRANTED, REQUESTING...');
-        // Need to request permissions with custom alert first
-        showAlert({
-          type: 'info',
-          title: '📷 Camera Access Required',
-          message: 'We need access to your camera to take photos of medicines. This helps you document your animal care records.',
-          confirmText: 'Grant Access',
-          showCancel: true,
-          cancelText: 'Not Now',
-          onConfirm: async () => {
-            console.log('🔑 REQUESTING CAMERA PERMISSIONS...');
-            const { status } = await ImagePicker.requestCameraPermissionsAsync();
-            console.log('🔑 PERMISSION REQUEST RESULT:', status);
-            
-            if (status === 'granted') {
-              console.log('✅ PERMISSION GRANTED, LAUNCHING CAMERA...');
-              await launchCamera();
-            } else {
-              console.log('❌ PERMISSION DENIED');
-              showAlert({
-                type: 'warning',
-                title: '⚠️ Permission Denied',
-                message: 'Camera access is required to take photos. You can enable it manually in your device settings under App Permissions.',
-                confirmText: 'OK',
-              });
-            }
-          },
-        });
-      }
-    } catch (error) {
-      console.error('❌ ERROR IN PROCEED WITH CAMERA:', error);
-      showAlert({
-        type: 'error',
-        title: '❌ Camera Permission Error',
-        message: `Error during permission check: ${error.message}`,
-        confirmText: 'Try Again',
-      });
-    }
-  };
-
-  const launchCamera = async () => {
-    try {
-      // Terminal and mobile logging
-      const log = (message, data = null) => {
-        console.log(message, data || '');
-        // Also show critical steps as alerts for mobile debugging
-        if (message.includes('📸 Starting') || message.includes('📸 Camera result') || message.includes('📸 Image successfully')) {
-          showAlert({
-            type: 'info',
-            title: 'Debug Log',
-            message: `${message}${data ? ` - ${JSON.stringify(data, null, 2)}` : ''}`,
-            confirmText: 'Continue',
-          });
-        }
-      };
-
-      log('📸 Starting camera launch...');
-      
-      const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [4, 3],
-        quality: 0.7, // Reduced quality to prevent memory issues
-        base64: false,
-        exif: false,
-        allowsMultipleSelection: false,
-      });
-
-      log('📸 Camera result received:', {
-        canceled: result.canceled,
-        assets: result.assets ? result.assets.length : 0,
-        hasAssets: !!(result.assets && result.assets.length > 0)
-      });
-
-      if (!result.canceled && result.assets && result.assets.length > 0) {
-        const asset = result.assets[0];
-        log('📸 Image asset details:', {
-          uri: asset.uri ? asset.uri.substring(0, 50) + '...' : 'No URI',
-          width: asset.width,
-          height: asset.height,
-          type: asset.type
-        });
-        
-        if (asset && asset.uri) {
-          log('📸 Adding image to state...');
-          setImages(prevImages => {
-            const newImages = [...prevImages, asset.uri];
-            log('📸 Images array updated:', `Total images: ${newImages.length}`);
-            return newImages;
-          });
-          
-          // Clear image error if exists
-          if (errors.images) {
-            setErrors(prevErrors => ({ ...prevErrors, images: null }));
-          }
-          
-          log('📸 Image successfully added!');
-          showAlert({
-            type: 'success',
-            title: '📸 Photo Captured!',
-            message: `Photo added successfully!\nURI: ${asset.uri.substring(0, 50)}...\nSize: ${asset.width}x${asset.height}`,
-            confirmText: 'Great!',
-          });
-        } else {
-          console.error('📸 Invalid asset or URI:', asset);
-          showAlert({
-            type: 'error',
-            title: 'Photo Processing Failed',
-            message: `Asset details: ${JSON.stringify(asset, null, 2)}`,
-            confirmText: 'OK',
-          });
-        }
-      } else {
-        log('📸 Camera was canceled or no assets', {
-          canceled: result.canceled,
-          assetsLength: result.assets ? result.assets.length : 'undefined'
-        });
-        
-        showAlert({
-          type: 'info',
-          title: 'Camera Result',
-          message: `Canceled: ${result.canceled}\nAssets: ${result.assets ? result.assets.length : 'undefined'}`,
-          confirmText: 'OK',
-        });
-      }
-    } catch (error) {
-      console.error('📸 CAMERA ERROR DETAILS:');
-      console.error('📸 Error message:', error.message);
-      console.error('📸 Error name:', error.name);
-      console.error('📸 Error stack:', error.stack);
-      console.error('📸 Full error object:', error);
-      
-      showAlert({
-        type: 'error',
-        title: 'Camera Error Details',
-        message: `Error Name: ${error.name}\nMessage: ${error.message}\nStack: ${error.stack ? error.stack.substring(0, 200) + '...' : 'No stack trace'}`,
-        confirmText: 'Show Console',
-        onConfirm: () => {
-          // Show additional error details
-          showAlert({
-            type: 'error',
-            title: 'Full Error Details',
-            message: `Full Error: ${JSON.stringify(error, Object.getOwnPropertyNames(error), 2)}`,
-            confirmText: 'OK',
-          });
-        },
-      });
-    }
+    // Use gallery only for all platforms (camera removed due to stability issues)
+    pickFromGallery();
   };
 
   const pickFromGallery = async () => {
@@ -443,16 +125,17 @@ const AddMedicineScreen = ({ navigation }) => {
         name: medicineName.trim(),
         animal: animalType,
         details: medicineDetails.trim(),
-        images: images,
+        images: images, // These will be converted to permanent storage in saveMedicine
         isFavorite: false,
       };
 
+      console.log('📝 Saving medicine with images:', images.length);
       await saveMedicine(medicineData);
 
       showAlert({
         type: 'success',
         title: '🎉 Medicine Added Successfully!',
-        message: 'Your medicine has been saved to the database.',
+        message: 'Your medicine and images have been saved permanently.',
         confirmText: 'Awesome!',
         onConfirm: () => {
           // Reset form
@@ -465,6 +148,7 @@ const AddMedicineScreen = ({ navigation }) => {
         },
       });
     } catch (error) {
+      console.error('❌ Save error:', error);
       showAlert({
         type: 'error',
         title: 'Save Failed',
@@ -570,30 +254,17 @@ const AddMedicineScreen = ({ navigation }) => {
             disabled={images.length >= 3}
           >
             <Ionicons
-              name="camera-outline"
+              name="images-outline"
               size={24}
               color={images.length >= 3 ? '#ccc' : '#4A90E2'}
             />
             <Text style={[styles.imagePickerText, images.length >= 3 && styles.disabledText]}>
               {images.length === 0 
-                ? Platform.OS === 'web' 
-                  ? '🖼️ Add Photo (Gallery)' 
-                  : '📸 Add Photo (Camera/Gallery)'
-                : `📸 Add Photo (${3 - images.length} remaining)`
+                ? '🖼️ Add Photo (Gallery)' 
+                : `🖼️ Add Photo (${3 - images.length} remaining)`
               }
             </Text>
           </TouchableOpacity>
-
-          {/* Debug Test Button - Remove after testing, Mobile only */}
-          {Platform.OS !== 'web' && (
-            <TouchableOpacity
-              style={styles.testButton}
-              onPress={showDeviceInfo}
-            >
-              <Ionicons name="bug-outline" size={20} color="#FF6B6B" />
-              <Text style={styles.testButtonText}>🧪 Debug Camera Issue</Text>
-            </TouchableOpacity>
-          )}
 
           {errors.images && (
             <Text style={styles.errorText}>{errors.images}</Text>

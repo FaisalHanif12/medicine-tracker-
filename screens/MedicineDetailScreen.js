@@ -85,11 +85,13 @@ const MedicineDetailScreen = ({ route, navigation }) => {
 
   const handleSaveEdit = async () => {
     try {
+      console.log('💾 Updating medicine with images:', editedMedicine.images?.length || 0);
       const updatedMedicine = await updateMedicine(medicine.id, editedMedicine);
+      
       showAlert({
         type: 'success',
         title: '✅ Updated Successfully',
-        message: 'Your medicine information has been updated.',
+        message: 'Your medicine information and images have been saved permanently.',
         confirmText: 'Great!',
         onConfirm: () => {
           setIsEditing(false);
@@ -97,6 +99,7 @@ const MedicineDetailScreen = ({ route, navigation }) => {
         },
       });
     } catch (error) {
+      console.error('❌ Update error:', error);
       showAlert({
         type: 'error',
         title: 'Update Failed',
@@ -117,121 +120,11 @@ const MedicineDetailScreen = ({ route, navigation }) => {
       return;
     }
 
-    // Web-specific behavior - only show gallery option
-    if (Platform.OS === 'web') {
-      pickFromGalleryEdit();
-      return;
-    }
-
-    // Mobile behavior - show both options
-    showAlert({
-      type: 'info',
-      title: '📸 Add Photo',
-      message: 'How would you like to add a photo?',
-      showCancel: true,
-      confirmText: '📷 Take Photo',
-      cancelText: '🖼️ Choose from Gallery',
-      onConfirm: () => takePhotoEdit(),
-      onCancel: () => pickFromGalleryEdit(),
-    });
+    // Use gallery only for all platforms (camera removed due to stability issues)
+    pickFromGalleryEdit();
   };
 
-  const takePhotoEdit = async () => {
-    try {
-      // Web compatibility check
-      if (Platform.OS === 'web') {
-        showAlert({
-          type: 'info',
-          title: '📱 Camera Not Available',
-          message: 'Camera functionality is not available on web. Please use the gallery option to upload images.',
-          confirmText: 'OK',
-        });
-        return;
-      }
 
-      // Check current camera permissions
-      const { status: currentStatus } = await ImagePicker.getCameraPermissionsAsync();
-      
-      if (currentStatus === 'granted') {
-        // Permissions already granted, proceed with camera
-        await launchCameraEdit();
-      } else {
-        // Need to request permissions with custom alert first
-        showAlert({
-          type: 'info',
-          title: '📷 Camera Access Required',
-          message: 'We need access to your camera to take photos of medicines. This helps you document your animal care records.',
-          confirmText: 'Grant Access',
-          showCancel: true,
-          cancelText: 'Not Now',
-          onConfirm: async () => {
-            const { status } = await ImagePicker.requestCameraPermissionsAsync();
-            
-            if (status === 'granted') {
-              await launchCameraEdit();
-            } else {
-              showAlert({
-                type: 'warning',
-                title: '⚠️ Permission Denied',
-                message: 'Camera access is required to take photos. You can enable it manually in your device settings under App Permissions.',
-                confirmText: 'OK',
-              });
-            }
-          },
-        });
-      }
-    } catch (error) {
-      showAlert({
-        type: 'error',
-        title: 'Camera Error',
-        message: 'We couldn\'t access the camera. Please try again.',
-        confirmText: 'Try Again',
-      });
-    }
-  };
-
-  const launchCameraEdit = async () => {
-    try {
-      const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [4, 3],
-        quality: 0.8,
-        base64: false,
-        exif: false,
-      });
-
-      if (!result.canceled && result.assets && result.assets.length > 0) {
-        const imageUri = result.assets[0].uri;
-        if (imageUri) {
-          const newImages = [...(editedMedicine.images || []), imageUri];
-          setEditedMedicine(prev => ({ ...prev, images: newImages }));
-          
-          showAlert({
-            type: 'success',
-            title: '📸 Photo Captured!',
-            message: 'Your photo has been added successfully.',
-            confirmText: 'Great!',
-          });
-        } else {
-          showAlert({
-            type: 'warning',
-            title: 'Photo Issue',
-            message: 'The photo was taken but couldn\'t be processed. Please try again.',
-            confirmText: 'OK',
-          });
-        }
-      }
-    } catch (error) {
-      console.error('Camera error:', error);
-      showAlert({
-        type: 'error',
-        title: 'Camera Error',
-        message: 'We couldn\'t take the photo. Please try again.',
-        confirmText: 'Try Again',
-      });
-    }
-  };
 
   const pickFromGalleryEdit = async () => {
     try {
@@ -395,7 +288,7 @@ const MedicineDetailScreen = ({ route, navigation }) => {
             onPress={handleAddImage}
           >
             <Ionicons name="add-circle-outline" size={20} color="#3B82F6" />
-            <Text style={styles.addImageText}>📸 Add Photo (Camera/Gallery)</Text>
+            <Text style={styles.addImageText}>🖼️ Add Photo (Gallery)</Text>
           </TouchableOpacity>
         )}
         
