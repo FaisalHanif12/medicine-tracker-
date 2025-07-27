@@ -8,6 +8,7 @@ import ViewMedicinesScreen from '../screens/ViewMedicinesScreen';
 import AddMedicineScreen from '../screens/AddMedicineScreen';
 import MedicineDetailScreen from '../screens/MedicineDetailScreen';
 import FavoritesScreen from '../screens/FavoritesScreen';
+import BackupScreen from '../screens/BackupScreen';
 
 const Stack = createStackNavigator();
 
@@ -73,6 +74,14 @@ const AppNavigator = () => {
           component={FavoritesScreen}
           options={{
             title: '💖 My Favorites',
+            headerTitleAlign: 'center',
+          }}
+        />
+        <Stack.Screen
+          name="Backup"
+          component={BackupScreen}
+          options={{
+            title: '🔒 Data Backup',
             headerTitleAlign: 'center',
           }}
         />

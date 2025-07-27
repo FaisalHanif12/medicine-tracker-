@@ -353,13 +353,22 @@ const ViewMedicinesScreen = ({ navigation }) => {
                     <Text style={styles.headerWelcome}>Good Day! 👋</Text>
                     <Text style={styles.headerTitle}>Animal Care Hub</Text>
                   </View>
-                  <TouchableOpacity 
-                    style={styles.favoritesButton}
-                    onPress={() => navigation.navigate('Favorites')}
-                    activeOpacity={0.8}
-                  >
-                    <MaterialIcons name="favorite" size={24} color="#FF6B9D" />
-                  </TouchableOpacity>
+                  <View style={styles.headerButtons}>
+                    <TouchableOpacity 
+                      style={styles.headerButton}
+                      onPress={() => navigation.navigate('Backup')}
+                      activeOpacity={0.8}
+                    >
+                      <Ionicons name="cloud-upload" size={24} color="#4A90E2" />
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      style={styles.favoritesButton}
+                      onPress={() => navigation.navigate('Favorites')}
+                      activeOpacity={0.8}
+                    >
+                      <MaterialIcons name="favorite" size={24} color="#FF6B9D" />
+                    </TouchableOpacity>
+                  </View>
                 </View>
                 
                 {renderStatsCard()}
@@ -475,6 +484,21 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: 'bold',
     color: '#FFFFFF',
+  },
+  headerButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headerButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(74, 144, 226, 0.3)',
+    marginRight: 8,
   },
   favoritesButton: {
     width: 40,
