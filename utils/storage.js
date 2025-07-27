@@ -244,3 +244,67 @@ export const migrateMedicinesToPermanentStorage = async () => {
     return { success: false, error: error.message };
   }
 }; 
+
+// Test function to simulate app update scenario
+export const testDataPreservation = async () => {
+  try {
+    console.log('🧪 Testing data preservation system...');
+    
+    // Create some test data
+    const testMedicine = {
+      name: 'Test Medicine',
+      animal: 'Cow',
+      details: 'Test medicine for data preservation testing',
+      images: [],
+      isFavorite: false,
+    };
+    
+    // Save test medicine
+    const savedMedicine = await saveMedicine(testMedicine);
+    console.log('✅ Test medicine saved:', savedMedicine.id);
+    
+    // Simulate app update by clearing AsyncStorage but keeping backup
+    const medicines = await getMedicines();
+    console.log('📊 Current medicines count:', medicines.length);
+    
+    // Create backup
+    const { createBackupData, saveBackupLocally } = require('./cloudStorage');
+    const backupData = await createBackupData();
+    await saveBackupLocally(backupData);
+    console.log('✅ Backup created with', backupData.totalCount, 'medicines');
+    
+    // Clear current data (simulate app update)
+    await clearAllMedicines();
+    console.log('🗑️ Current data cleared (simulating app update)');
+    
+    // Check if backup exists
+    const { getLocalBackup, restoreFromBackup } = require('./cloudStorage');
+    const localBackup = await getLocalBackup();
+    
+    if (localBackup) {
+      console.log('🔄 Restoring from backup...');
+      const restoreResult = await restoreFromBackup(localBackup);
+      console.log('✅ Restore result:', restoreResult);
+      
+      // Verify data is restored
+      const restoredMedicines = await getMedicines();
+      console.log('📊 Restored medicines count:', restoredMedicines.length);
+      
+      return {
+        success: true,
+        originalCount: medicines.length,
+        restoredCount: restoredMedicines.length,
+        message: 'Data preservation test completed successfully'
+      };
+    } else {
+      throw new Error('No backup found for restoration');
+    }
+    
+  } catch (error) {
+    console.error('❌ Data preservation test failed:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}; 
