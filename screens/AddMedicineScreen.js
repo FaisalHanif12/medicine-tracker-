@@ -48,11 +48,11 @@ const AddMedicineScreen = ({ navigation }) => {
       newErrors.medicineDetails = 'Details are required';
     }
 
-    if (category === 'desi_totka' && !howToMake.trim()) {
-      newErrors.howToMake = 'How to make is required for Desi Totka';
-    }
+    // Make "How to Make" optional for Desi Totka
+    // Removed the validation for howToMake
 
-    if (images.length === 0) {
+    // Only require images for Medicine category, not for Desi Totka
+    if (category === 'medicine' && images.length === 0) {
       newErrors.images = 'Please add at least one image';
     }
 
@@ -134,7 +134,7 @@ const AddMedicineScreen = ({ navigation }) => {
         images: images, // These will be converted to permanent storage in saveMedicine
         isFavorite: false,
         category: category, // Add category to distinguish between medicine and desi totka
-        howToMake: category === 'desi_totka' ? howToMake.trim() : null, // Only for Desi Totka
+        howToMake: category === 'desi_totka' ? (howToMake.trim() || null) : null, // Optional for Desi Totka
       };
 
       console.log('📝 Saving entry with images:', images.length);
@@ -314,10 +314,10 @@ const AddMedicineScreen = ({ navigation }) => {
         {/* How to Make - Only for Desi Totka */}
         {category === 'desi_totka' && (
           <View style={styles.formGroup}>
-            <Text style={styles.label}>🔧 How to Make</Text>
+            <Text style={styles.label}>🔧 How to Make (Optional)</Text>
             <TextInput
               style={[styles.textArea, errors.howToMake && styles.inputError]}
-              placeholder="Enter ingredients and preparation method..."
+              placeholder="Enter ingredients and preparation method (optional)..."
               value={howToMake}
               onChangeText={(text) => {
                 setHowToMake(text);
@@ -335,49 +335,51 @@ const AddMedicineScreen = ({ navigation }) => {
           </View>
         )}
 
-        {/* Images */}
-        <View style={styles.formGroup}>
-          <Text style={styles.label}>📸 Images ({images.length}/3)</Text>
-          
-          <TouchableOpacity
-            style={[styles.imagePickerButton, errors.images && styles.inputError]}
-            onPress={showImagePicker}
-            disabled={images.length >= 3}
-          >
-            <Ionicons
-              name="images-outline"
-              size={24}
-              color={images.length >= 3 ? '#ccc' : '#4A90E2'}
-            />
-            <Text style={[styles.imagePickerText, images.length >= 3 && styles.disabledText]}>
-              {images.length === 0 
-                ? '🖼️ Add Photo (Gallery)' 
-                : `🖼️ Add Photo (${3 - images.length} remaining)`
-              }
-            </Text>
-          </TouchableOpacity>
+        {/* Images - Only for Medicine */}
+        {category === 'medicine' && (
+          <View style={styles.formGroup}>
+            <Text style={styles.label}>📸 Images ({images.length}/3)</Text>
+            
+            <TouchableOpacity
+              style={[styles.imagePickerButton, errors.images && styles.inputError]}
+              onPress={showImagePicker}
+              disabled={images.length >= 3}
+            >
+              <Ionicons
+                name="images-outline"
+                size={24}
+                color={images.length >= 3 ? '#ccc' : '#4A90E2'}
+              />
+              <Text style={[styles.imagePickerText, images.length >= 3 && styles.disabledText]}>
+                {images.length === 0 
+                  ? '🖼️ Add Photo (Gallery)' 
+                  : `🖼️ Add Photo (${3 - images.length} remaining)`
+                }
+              </Text>
+            </TouchableOpacity>
 
-          {errors.images && (
-            <Text style={styles.errorText}>{errors.images}</Text>
-          )}
+            {errors.images && (
+              <Text style={styles.errorText}>{errors.images}</Text>
+            )}
 
-          {/* Image Preview */}
-          {images.length > 0 && (
-            <View style={styles.imagePreviewContainer}>
-              {images.map((uri, index) => (
-                <View key={index} style={styles.imagePreview}>
-                  <Image source={{ uri }} style={styles.previewImage} />
-                  <TouchableOpacity
-                    style={styles.removeImageButton}
-                    onPress={() => removeImage(index)}
-                  >
-                    <Ionicons name="close-circle" size={24} color="#FF4444" />
-                  </TouchableOpacity>
-                </View>
-              ))}
-            </View>
-          )}
-        </View>
+            {/* Image Preview */}
+            {images.length > 0 && (
+              <View style={styles.imagePreviewContainer}>
+                {images.map((uri, index) => (
+                  <View key={index} style={styles.imagePreview}>
+                    <Image source={{ uri }} style={styles.previewImage} />
+                    <TouchableOpacity
+                      style={styles.removeImageButton}
+                      onPress={() => removeImage(index)}
+                    >
+                      <Ionicons name="close-circle" size={24} color="#FF4444" />
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </View>
+            )}
+          </View>
+        )}
 
         {/* Save Button */}
         <TouchableOpacity
@@ -483,13 +485,16 @@ const styles = StyleSheet.create({
     borderColor: '#E1E5E9',
     borderRadius: 12,
     padding: 5,
+    overflow: 'hidden', // Prevent background overflow
   },
   categoryButton: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 10,
     paddingHorizontal: 20,
-    borderRadius: 10,
+    borderRadius: 8, // Reduced border radius
+    flex: 1, // Make buttons equal width
+    marginHorizontal: 2, // Add small margin between buttons
   },
   categoryButtonActive: {
     backgroundColor: '#4A90E2',
