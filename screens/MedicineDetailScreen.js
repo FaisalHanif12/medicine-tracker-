@@ -234,7 +234,9 @@ const MedicineDetailScreen = ({ route, navigation }) => {
 
       {/* Medicine Details Section */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>📝 Medicine Details</Text>
+        <Text style={styles.sectionTitle}>
+          {medicine.category === 'medicine' ? '📝 Medicine Details' : '🌿 Totka Details'}
+        </Text>
         {isEditing ? (
           <View style={styles.editContainer}>
             <Text style={styles.editLabel}>Medicine Name</Text>
@@ -302,53 +304,68 @@ const MedicineDetailScreen = ({ route, navigation }) => {
         )}
       </View>
 
-      {/* Images Section */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>
-          📸 Medicine Images ({isEditing ? editedMedicine.images?.length || 0 : medicine.images?.length || 0})
-        </Text>
-        
-        {isEditing && (
-          <TouchableOpacity
-            style={styles.addImageButton}
-            onPress={handleAddImage}
-          >
-            <Ionicons name="add-circle-outline" size={20} color="#3B82F6" />
-            <Text style={styles.addImageText}>🖼️ Add Photo (Gallery)</Text>
-          </TouchableOpacity>
-        )}
-        
-        {(isEditing ? editedMedicine.images : medicine.images) && (isEditing ? editedMedicine.images : medicine.images).length > 0 ? (
-          <View style={styles.imagesGrid}>
-            {(isEditing ? editedMedicine.images : medicine.images).map((uri, index) => (
-              <View key={index} style={styles.imageContainer}>
-                <TouchableOpacity
-                  onPress={() => openImageModal(index)}
-                  activeOpacity={0.8}
-                >
-                  <Image source={{ uri }} style={styles.medicineImage} />
-                  <View style={styles.imageOverlay}>
-                    <Ionicons name="expand-outline" size={24} color="#FFFFFF" />
-                  </View>
-                </TouchableOpacity>
-                {isEditing && (
+      {/* Images Section - Only for Medicine */}
+      {medicine.category === 'medicine' && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>
+            📸 Medicine Images ({isEditing ? editedMedicine.images?.length || 0 : medicine.images?.length || 0})
+          </Text>
+          
+          {isEditing && (
+            <TouchableOpacity
+              style={styles.addImageButton}
+              onPress={handleAddImage}
+            >
+              <Ionicons name="add-circle-outline" size={20} color="#3B82F6" />
+              <Text style={styles.addImageText}>🖼️ Add Photo (Gallery)</Text>
+            </TouchableOpacity>
+          )}
+          
+          {(isEditing ? editedMedicine.images : medicine.images) && (isEditing ? editedMedicine.images : medicine.images).length > 0 ? (
+            <View style={styles.imagesGrid}>
+              {(isEditing ? editedMedicine.images : medicine.images).map((uri, index) => (
+                <View key={index} style={styles.imageContainer}>
                   <TouchableOpacity
-                    style={styles.removeImageButton}
-                    onPress={() => handleRemoveImage(index)}
+                    onPress={() => openImageModal(index)}
+                    activeOpacity={0.8}
                   >
-                    <Ionicons name="close-circle" size={24} color="#EF4444" />
+                    <Image source={{ uri }} style={styles.medicineImage} />
+                    <View style={styles.imageOverlay}>
+                      <Ionicons name="expand-outline" size={24} color="#FFFFFF" />
+                    </View>
                   </TouchableOpacity>
-                )}
-              </View>
-            ))}
+                  {isEditing && (
+                    <TouchableOpacity
+                      style={styles.removeImageButton}
+                      onPress={() => handleRemoveImage(index)}
+                    >
+                      <Ionicons name="close-circle" size={24} color="#EF4444" />
+                    </TouchableOpacity>
+                  )}
+                </View>
+              ))}
+            </View>
+          ) : (
+            <View style={styles.noImagesContainer}>
+              <Ionicons name="image-outline" size={60} color="#ccc" />
+              <Text style={styles.noImagesText}>No images available</Text>
+            </View>
+          )}
+        </View>
+      )}
+
+      {/* Desi Totka Info Section */}
+      {medicine.category === 'desi_totka' && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>🌿 Traditional Remedy Info</Text>
+          <View style={styles.desiTotkaInfoContainer}>
+            <FontAwesome5 name="leaf" size={40} color="#10B981" />
+            <Text style={styles.desiTotkaInfoText}>
+              This is a traditional home remedy (Desi Totka) that doesn't require images.
+            </Text>
           </View>
-        ) : (
-          <View style={styles.noImagesContainer}>
-            <Ionicons name="image-outline" size={60} color="#ccc" />
-            <Text style={styles.noImagesText}>No images available</Text>
-          </View>
-        )}
-      </View>
+        </View>
+      )}
 
       {/* Medicine Info Section */}
       <View style={styles.section}>
@@ -645,6 +662,22 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#999',
     marginTop: 10,
+  },
+  desiTotkaInfoContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 30,
+    backgroundColor: '#F0FDF4',
+    borderRadius: 12,
+    marginTop: 10,
+  },
+  desiTotkaInfoText: {
+    fontSize: 16,
+    color: '#10B981',
+    textAlign: 'center',
+    marginTop: 15,
+    lineHeight: 24,
+    paddingHorizontal: 20,
   },
   infoContainer: {
     backgroundColor: '#F8F9FA',

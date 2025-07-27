@@ -201,7 +201,7 @@ const AddMedicineScreen = ({ navigation }) => {
             styles.categoryButtonText,
             category === 'medicine' && styles.categoryButtonTextActive
           ]}>
-            💊 Medicine
+            Medicine
           </Text>
         </TouchableOpacity>
         
@@ -221,7 +221,7 @@ const AddMedicineScreen = ({ navigation }) => {
             styles.categoryButtonText,
             category === 'desi_totka' && styles.categoryButtonTextActive
           ]}>
-            🌿 Desi Totka
+            Desi Totka
           </Text>
         </TouchableOpacity>
       </View>

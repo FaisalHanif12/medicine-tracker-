@@ -168,7 +168,10 @@ const ViewMedicinesScreen = ({ navigation }) => {
               <View style={styles.cardHeaderText}>
                 <Text style={styles.animalTypeModern}>{item.animal}</Text>
                 <Text style={styles.medicineCount}>
-                  {item.images?.length || 0} photos
+                  {item.category === 'medicine' 
+                    ? `${item.images?.length || 0} photos`
+                    : 'Traditional Remedy'
+                  }
                 </Text>
               </View>
               <TouchableOpacity 
@@ -188,25 +191,37 @@ const ViewMedicinesScreen = ({ navigation }) => {
             </View>
           </View>
 
-          {/* Main Image with Overlay */}
-          <View style={styles.cardImageContainer}>
-            {item.images && item.images.length > 0 ? (
-              <>
-                <Image source={{ uri: item.images[0] }} style={styles.modernCardImage} />
-                <View style={styles.modernImageOverlay}>
-                  <View style={styles.imageCountBadge}>
-                    <Ionicons name="camera" size={12} color="#FFFFFF" />
-                    <Text style={styles.imageCountText}>{item.images.length}</Text>
+          {/* Main Image with Overlay - Only for Medicine */}
+          {item.category === 'medicine' && (
+            <View style={styles.cardImageContainer}>
+              {item.images && item.images.length > 0 ? (
+                <>
+                  <Image source={{ uri: item.images[0] }} style={styles.modernCardImage} />
+                  <View style={styles.modernImageOverlay}>
+                    <View style={styles.imageCountBadge}>
+                      <Ionicons name="camera" size={12} color="#FFFFFF" />
+                      <Text style={styles.imageCountText}>{item.images.length}</Text>
+                    </View>
                   </View>
+                </>
+              ) : (
+                <View style={styles.placeholderImageModern}>
+                  <FontAwesome5 name="pills" size={32} color="#E0E0E0" />
+                  <Text style={styles.placeholderText}>No Image</Text>
                 </View>
-              </>
-            ) : (
-              <View style={styles.placeholderImageModern}>
-                <FontAwesome5 name="pills" size={32} color="#E0E0E0" />
-                <Text style={styles.placeholderText}>No Image</Text>
+              )}
+            </View>
+          )}
+
+          {/* Desi Totka Content Area */}
+          {item.category === 'desi_totka' && (
+            <View style={styles.desiTotkaContent}>
+              <View style={styles.desiTotkaIcon}>
+                <FontAwesome5 name="leaf" size={40} color="#10B981" />
               </View>
-            )}
-          </View>
+              <Text style={styles.desiTotkaLabel}>Traditional Remedy</Text>
+            </View>
+          )}
 
           {/* Card Content */}
           <View style={styles.modernCardContent}>
@@ -794,6 +809,24 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '500',
     marginLeft: 4,
+  },
+
+  // Desi Totka Content
+  desiTotkaContent: {
+    height: 120,
+    backgroundColor: '#F0FDF4',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 16,
+  },
+  desiTotkaIcon: {
+    marginBottom: 8,
+  },
+  desiTotkaLabel: {
+    fontSize: 14,
+    color: '#10B981',
+    fontWeight: '600',
   },
 
   // Card Content
