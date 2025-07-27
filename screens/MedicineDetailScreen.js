@@ -13,6 +13,7 @@ import {
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { FontAwesome5 } from '@expo/vector-icons';
 import { deleteMedicine, updateMedicine } from '../utils/storage';
 import { useCustomAlert } from '../components/CustomAlert';
 import * as ImagePicker from 'expo-image-picker';
