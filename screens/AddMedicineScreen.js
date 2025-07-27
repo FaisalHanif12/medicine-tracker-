@@ -21,9 +21,11 @@ import { useCustomAlert } from '../components/CustomAlert';
 const { width } = Dimensions.get('window');
 
 const AddMedicineScreen = ({ navigation }) => {
+  const [category, setCategory] = useState('medicine'); // 'medicine' or 'desi_totka'
   const [medicineName, setMedicineName] = useState('');
   const [animalType, setAnimalType] = useState('');
   const [medicineDetails, setMedicineDetails] = useState('');
+  const [howToMake, setHowToMake] = useState(''); // Only for Desi Totka
   const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
@@ -35,7 +37,7 @@ const AddMedicineScreen = ({ navigation }) => {
     const newErrors = {};
 
     if (!medicineName.trim()) {
-      newErrors.medicineName = 'Medicine name is required';
+      newErrors.medicineName = 'Name is required';
     }
 
     if (!animalType) {
@@ -43,7 +45,11 @@ const AddMedicineScreen = ({ navigation }) => {
     }
 
     if (!medicineDetails.trim()) {
-      newErrors.medicineDetails = 'Medicine details are required';
+      newErrors.medicineDetails = 'Details are required';
+    }
+
+    if (category === 'desi_totka' && !howToMake.trim()) {
+      newErrors.howToMake = 'How to make is required for Desi Totka';
     }
 
     if (images.length === 0) {
@@ -59,7 +65,7 @@ const AddMedicineScreen = ({ navigation }) => {
       showAlert({
         type: 'warning',
         title: 'Image Limit Reached',
-        message: 'You can only add up to 3 images per medicine.',
+        message: 'You can only add up to 3 images per entry.',
         confirmText: 'Got it',
       });
       return;
@@ -121,27 +127,31 @@ const AddMedicineScreen = ({ navigation }) => {
     setLoading(true);
 
     try {
-      const medicineData = {
+      const entryData = {
         name: medicineName.trim(),
         animal: animalType,
         details: medicineDetails.trim(),
         images: images, // These will be converted to permanent storage in saveMedicine
         isFavorite: false,
+        category: category, // Add category to distinguish between medicine and desi totka
+        howToMake: category === 'desi_totka' ? howToMake.trim() : null, // Only for Desi Totka
       };
 
-      console.log('📝 Saving medicine with images:', images.length);
-      await saveMedicine(medicineData);
+      console.log('📝 Saving entry with images:', images.length);
+      await saveMedicine(entryData);
 
       showAlert({
         type: 'success',
-        title: '🎉 Medicine Added Successfully!',
-        message: 'Your medicine and images have been saved permanently.',
+        title: `🎉 ${category === 'medicine' ? 'Medicine' : 'Desi Totka'} Added Successfully!`,
+        message: `Your ${category === 'medicine' ? 'medicine' : 'desi totka'} and images have been saved permanently.`,
         confirmText: 'Awesome!',
         onConfirm: () => {
           // Reset form
+          setCategory('medicine');
           setMedicineName('');
           setAnimalType('');
           setMedicineDetails('');
+          setHowToMake('');
           setImages([]);
           setErrors({});
           navigation.goBack();
@@ -152,7 +162,7 @@ const AddMedicineScreen = ({ navigation }) => {
       showAlert({
         type: 'error',
         title: 'Save Failed',
-        message: 'We couldn\'t save your medicine. Please check your information and try again.',
+        message: 'We couldn\'t save your entry. Please check your information and try again.',
         confirmText: 'Try Again',
       });
     }
@@ -171,15 +181,67 @@ const AddMedicineScreen = ({ navigation }) => {
     }
   };
 
+  const renderCategorySelector = () => (
+    <View style={styles.formGroup}>
+      <Text style={styles.label}>📋 Category</Text>
+      <View style={styles.categoryContainer}>
+        <TouchableOpacity
+          style={[
+            styles.categoryButton,
+            category === 'medicine' && styles.categoryButtonActive
+          ]}
+          onPress={() => setCategory('medicine')}
+        >
+          <Ionicons 
+            name="medical" 
+            size={20} 
+            color={category === 'medicine' ? '#FFFFFF' : '#4A90E2'} 
+          />
+          <Text style={[
+            styles.categoryButtonText,
+            category === 'medicine' && styles.categoryButtonTextActive
+          ]}>
+            💊 Medicine
+          </Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity
+          style={[
+            styles.categoryButton,
+            category === 'desi_totka' && styles.categoryButtonActive
+          ]}
+          onPress={() => setCategory('desi_totka')}
+        >
+          <Ionicons 
+            name="leaf" 
+            size={20} 
+            color={category === 'desi_totka' ? '#FFFFFF' : '#10B981'} 
+          />
+          <Text style={[
+            styles.categoryButtonText,
+            category === 'desi_totka' && styles.categoryButtonTextActive
+          ]}>
+            🌿 Desi Totka
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <View style={styles.content}>
-        {/* Medicine Name */}
+        {/* Category Selector */}
+        {renderCategorySelector()}
+
+        {/* Entry Name */}
         <View style={styles.formGroup}>
-          <Text style={styles.label}>💊 Medicine Name</Text>
+          <Text style={styles.label}>
+            {category === 'medicine' ? '💊 Medicine Name' : '🌿 Totka Name'}
+          </Text>
           <TextInput
             style={[styles.input, errors.medicineName && styles.inputError]}
-            placeholder="Enter medicine name"
+            placeholder={category === 'medicine' ? "Enter medicine name" : "Enter totka name"}
             value={medicineName}
             onChangeText={(text) => {
               setMedicineName(text);
@@ -222,12 +284,17 @@ const AddMedicineScreen = ({ navigation }) => {
           )}
         </View>
 
-        {/* Medicine Details */}
+        {/* Details */}
         <View style={styles.formGroup}>
-          <Text style={styles.label}>📝 Medicine Details</Text>
+          <Text style={styles.label}>
+            {category === 'medicine' ? '📝 Medicine Details' : '📝 Totka Details'}
+          </Text>
           <TextInput
             style={[styles.textArea, errors.medicineDetails && styles.inputError]}
-            placeholder="Enter dosage, purpose, side effects, etc."
+            placeholder={category === 'medicine' 
+              ? "Enter dosage, purpose, side effects, etc." 
+              : "Enter purpose, benefits, usage instructions, etc."
+            }
             value={medicineDetails}
             onChangeText={(text) => {
               setMedicineDetails(text);
@@ -244,9 +311,33 @@ const AddMedicineScreen = ({ navigation }) => {
           )}
         </View>
 
+        {/* How to Make - Only for Desi Totka */}
+        {category === 'desi_totka' && (
+          <View style={styles.formGroup}>
+            <Text style={styles.label}>🔧 How to Make</Text>
+            <TextInput
+              style={[styles.textArea, errors.howToMake && styles.inputError]}
+              placeholder="Enter ingredients and preparation method..."
+              value={howToMake}
+              onChangeText={(text) => {
+                setHowToMake(text);
+                if (errors.howToMake) {
+                  setErrors({ ...errors, howToMake: null });
+                }
+              }}
+              multiline
+              numberOfLines={4}
+              textAlignVertical="top"
+            />
+            {errors.howToMake && (
+              <Text style={styles.errorText}>{errors.howToMake}</Text>
+            )}
+          </View>
+        )}
+
         {/* Images */}
         <View style={styles.formGroup}>
-          <Text style={styles.label}>📸 Medicine Images ({images.length}/3)</Text>
+          <Text style={styles.label}>📸 Images ({images.length}/3)</Text>
           
           <TouchableOpacity
             style={[styles.imagePickerButton, errors.images && styles.inputError]}
@@ -299,7 +390,9 @@ const AddMedicineScreen = ({ navigation }) => {
           ) : (
             <>
               <Ionicons name="save-outline" size={24} color="#FFFFFF" />
-              <Text style={styles.saveButtonText}>Save Medicine</Text>
+              <Text style={styles.saveButtonText}>
+                Save {category === 'medicine' ? 'Medicine' : 'Desi Totka'}
+              </Text>
             </>
           )}
         </TouchableOpacity>
@@ -382,6 +475,34 @@ const styles = StyleSheet.create({
   disabledText: {
     color: '#ccc',
   },
+  categoryContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E1E5E9',
+    borderRadius: 12,
+    padding: 5,
+  },
+  categoryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+  },
+  categoryButtonActive: {
+    backgroundColor: '#4A90E2',
+  },
+  categoryButtonText: {
+    marginLeft: 8,
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#4A90E2',
+  },
+  categoryButtonTextActive: {
+    color: '#FFFFFF',
+  },
   testButton: {
     backgroundColor: '#FFF5F5',
     borderWidth: 1,
@@ -439,6 +560,33 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     marginLeft: 10,
+  },
+  categoryContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E1E5E9',
+    borderRadius: 12,
+    padding: 5,
+  },
+  categoryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+  },
+  categoryButtonActive: {
+    backgroundColor: '#4A90E2',
+  },
+  categoryButtonText: {
+    marginLeft: 8,
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  categoryButtonTextActive: {
+    color: '#FFFFFF',
   },
 });
 

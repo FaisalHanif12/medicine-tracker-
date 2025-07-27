@@ -45,10 +45,11 @@ const MedicineDetailScreen = ({ route, navigation }) => {
   };
 
   const handleDeleteMedicine = () => {
+    const entryType = medicine.category === 'medicine' ? 'Medicine' : 'Desi Totka';
     showAlert({
       type: 'confirm',
-      title: '🗑️ Delete Medicine',
-      message: 'Are you sure you want to delete this medicine entry? This action cannot be undone.',
+      title: `🗑️ Delete ${entryType}`,
+      message: `Are you sure you want to delete this ${entryType.toLowerCase()} entry? This action cannot be undone.`,
       showCancel: true,
       confirmText: 'Delete',
       cancelText: 'Cancel',
@@ -88,10 +89,11 @@ const MedicineDetailScreen = ({ route, navigation }) => {
       console.log('💾 Updating medicine with images:', editedMedicine.images?.length || 0);
       const updatedMedicine = await updateMedicine(medicine.id, editedMedicine);
       
+      const entryType = medicine.category === 'medicine' ? 'Medicine' : 'Desi Totka';
       showAlert({
         type: 'success',
         title: '✅ Updated Successfully',
-        message: 'Your medicine information and images have been saved permanently.',
+        message: `Your ${entryType.toLowerCase()} information and images have been saved permanently.`,
         confirmText: 'Great!',
         onConfirm: () => {
           setIsEditing(false);
@@ -272,6 +274,30 @@ const MedicineDetailScreen = ({ route, navigation }) => {
         ) : (
           <View style={styles.detailsContainer}>
             <Text style={styles.detailsText}>{medicine.details}</Text>
+          </View>
+        )}
+        
+        {/* How to Make Section - Only for Desi Totka */}
+        {medicine.category === 'desi_totka' && medicine.howToMake && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>🔧 How to Make</Text>
+            {isEditing ? (
+              <View style={styles.inputContainer}>
+                <TextInput
+                  style={styles.textArea}
+                  placeholder="Enter ingredients and preparation method..."
+                  value={editedMedicine.howToMake}
+                  onChangeText={(text) => setEditedMedicine({ ...editedMedicine, howToMake: text })}
+                  multiline
+                  numberOfLines={4}
+                  textAlignVertical="top"
+                />
+              </View>
+            ) : (
+              <View style={styles.detailsContainer}>
+                <Text style={styles.detailsText}>{medicine.howToMake}</Text>
+              </View>
+            )}
           </View>
         )}
       </View>

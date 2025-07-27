@@ -25,6 +25,7 @@ const ViewMedicinesScreen = ({ navigation }) => {
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [selectedType, setSelectedType] = useState('All'); // 'All', 'medicine', 'desi_totka'
   const scrollY = new Animated.Value(0);
   const { showAlert, AlertComponent } = useCustomAlert();
 
@@ -74,8 +75,19 @@ const ViewMedicinesScreen = ({ navigation }) => {
   };
 
   const getFilteredMedicines = () => {
-    if (selectedCategory === 'All') return medicines;
-    return medicines.filter(m => m.animal === selectedCategory);
+    let filtered = medicines;
+    
+    // Filter by type (Medicine/Desi Totka)
+    if (selectedType !== 'All') {
+      filtered = filtered.filter(m => m.category === selectedType);
+    }
+    
+    // Filter by animal category
+    if (selectedCategory !== 'All') {
+      filtered = filtered.filter(m => m.animal === selectedCategory);
+    }
+    
+    return filtered;
   };
 
   const navigateToDetail = (medicine) => {
@@ -116,7 +128,11 @@ const ViewMedicinesScreen = ({ navigation }) => {
       return daysDiff <= 7;
     }).length;
     
-    return { total, animals, recent: recentCount };
+    // Category stats
+    const medicinesCount = medicines.filter(m => m.category === 'medicine').length;
+    const desiTotkaCount = medicines.filter(m => m.category === 'desi_totka').length;
+    
+    return { total, animals, recent: recentCount, medicinesCount, desiTotkaCount };
   };
 
   const renderMedicineCard = ({ item, index }) => {
@@ -194,9 +210,19 @@ const ViewMedicinesScreen = ({ navigation }) => {
 
           {/* Card Content */}
           <View style={styles.modernCardContent}>
-            <Text style={styles.medicineNameModern} numberOfLines={2}>
-              {item.name}
-            </Text>
+            <View style={styles.cardHeaderRow}>
+              <Text style={styles.medicineNameModern} numberOfLines={2}>
+                {item.name}
+              </Text>
+              <View style={[
+                styles.categoryBadge,
+                { backgroundColor: item.category === 'medicine' ? '#4A90E2' : '#10B981' }
+              ]}>
+                <Text style={styles.categoryBadgeText}>
+                  {item.category === 'medicine' ? '💊' : '🌿'}
+                </Text>
+              </View>
+            </View>
             
             <Text style={styles.medicineDetailsModern} numberOfLines={2}>
               {item.details}
@@ -232,13 +258,13 @@ const ViewMedicinesScreen = ({ navigation }) => {
       <View style={styles.statsContainer}>
         <View style={styles.statsCard}>
           <FontAwesome5 name="pills" size={24} color="#4F46E5" />
-          <Text style={styles.statsNumber}>{stats.total}</Text>
-          <Text style={styles.statsLabel}>Total Medicines</Text>
+          <Text style={styles.statsNumber}>{stats.medicinesCount}</Text>
+          <Text style={styles.statsLabel}>Medicines</Text>
         </View>
         <View style={styles.statsCard}>
-          <FontAwesome5 name="paw" size={24} color="#059669" />
-          <Text style={styles.statsNumber}>{stats.animals}</Text>
-          <Text style={styles.statsLabel}>Animal Types</Text>
+          <FontAwesome5 name="leaf" size={24} color="#10B981" />
+          <Text style={styles.statsNumber}>{stats.desiTotkaCount}</Text>
+          <Text style={styles.statsLabel}>Desi Totka</Text>
         </View>
         <View style={styles.statsCard}>
           <Ionicons name="time" size={24} color="#DC2626" />
@@ -246,6 +272,41 @@ const ViewMedicinesScreen = ({ navigation }) => {
           <Text style={styles.statsLabel}>This Week</Text>
         </View>
       </View>
+    );
+  };
+
+  const renderTypeFilter = () => {
+    const types = [
+      { key: 'All', label: 'All', icon: '📋' },
+      { key: 'medicine', label: 'Medicines', icon: '💊' },
+      { key: 'desi_totka', label: 'Desi Totka', icon: '🌿' }
+    ];
+    
+    return (
+      <ScrollView 
+        horizontal 
+        showsHorizontalScrollIndicator={false}
+        style={styles.categoryContainer}
+        contentContainerStyle={styles.categoryContent}
+      >
+        {types.map((type) => (
+          <TouchableOpacity
+            key={type.key}
+            style={[
+              styles.categoryChip,
+              selectedType === type.key && styles.categoryChipActive
+            ]}
+            onPress={() => setSelectedType(type.key)}
+          >
+            <Text style={[
+              styles.categoryText,
+              selectedType === type.key && styles.categoryTextActive
+            ]}>
+              {type.icon} {type.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
     );
   };
 
@@ -389,6 +450,12 @@ const ViewMedicinesScreen = ({ navigation }) => {
               </View>
             </View>
 
+            {/* Type Filter */}
+            <View style={styles.filterSection}>
+              <Text style={styles.filterTitle}>Filter by Type</Text>
+              {renderTypeFilter()}
+            </View>
+
             {/* Category Filter */}
             <View style={styles.filterSection}>
               <Text style={styles.filterTitle}>Filter by Animal</Text>
@@ -399,9 +466,15 @@ const ViewMedicinesScreen = ({ navigation }) => {
             <View style={styles.medicineGrid}>
               <View style={styles.gridHeader}>
                 <Text style={styles.gridTitle}>
-                  {selectedCategory === 'All' 
-                    ? `All Medicines (${filteredMedicines.length})`
-                    : `${selectedCategory} Medicines (${filteredMedicines.length})`
+                  {selectedType === 'All' 
+                    ? (selectedCategory === 'All' 
+                        ? `All Entries (${filteredMedicines.length})`
+                        : `${selectedCategory} Entries (${filteredMedicines.length})`
+                      )
+                    : (selectedCategory === 'All'
+                        ? `${selectedType === 'medicine' ? 'Medicines' : 'Desi Totka'} (${filteredMedicines.length})`
+                        : `${selectedCategory} ${selectedType === 'medicine' ? 'Medicines' : 'Desi Totka'} (${filteredMedicines.length})`
+                      )
                   }
                 </Text>
                 <TouchableOpacity style={styles.sortButton}>
@@ -727,12 +800,30 @@ const styles = StyleSheet.create({
   modernCardContent: {
     padding: 20,
   },
+  cardHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 8,
+  },
   medicineNameModern: {
     fontSize: 18,
     fontWeight: '700',
     color: '#1F2937',
-    marginBottom: 8,
     lineHeight: 24,
+    flex: 1,
+    marginRight: 8,
+  },
+  categoryBadge: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  categoryBadgeText: {
+    fontSize: 14,
+    fontWeight: '600',
   },
   medicineDetailsModern: {
     fontSize: 14,
