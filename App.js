@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Platform, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { NavigationContainer } from '@react-navigation/native';
 import AppNavigator from './navigation/AppNavigator';
 import { migrateMedicinesToPermanentStorage } from './utils/storage';
 import { handleAppUpdateDataPreservation, performAutoBackup } from './utils/cloudStorage';
@@ -45,7 +46,9 @@ export default function App() {
       ) : (
         <StatusBar style="light" backgroundColor="#4A90E2" />
       )}
-      <AppNavigator />
+      <NavigationContainer>
+        <AppNavigator />
+      </NavigationContainer>
     </GestureHandlerRootView>
   );
 }

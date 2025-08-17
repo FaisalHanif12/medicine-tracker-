@@ -2,40 +2,45 @@
   "expo": {
     "name": "MediCare",
     "slug": "MediCare",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "orientation": "portrait",
     "icon": "./assets/medicare-icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
     "splash": {
       "image": "./assets/medicare-splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#4F46E5"
     },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
+      "bundleIdentifier": "com.medicare.app",
       "infoPlist": {
-        "NSPhotoLibraryUsageDescription": "This app needs access to photo library to upload medicine images.",
-        "NSCameraUsageDescription": "This app needs access to camera to take photos of medicines for documentation."
+        "NSCameraUsageDescription": "This app needs access to camera to take photos of medicines."
       }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/medicare-adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#4F46E5"
       },
       "package": "com.medicare.app",
-      "versionCode": 3,
-      "edgeToEdgeEnabled": true,
       "permissions": [
+        "CAMERA",
         "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE",
-        "CAMERA"
-      ]
+        "WRITE_EXTERNAL_STORAGE"
+      ],
+      "versionCode": 4
     },
     "web": {
-      "favicon": "./assets/medicare-icon.png"
+      "favicon": "./assets/medicare_logo.jpg",
+      "bundler": "metro"
     },
+    "plugins": [
+      "expo-image-picker"
+    ],
     "extra": {
       "eas": {
         "projectId": "ca67fb89-f606-4023-84d4-0d994da5f0cd"

@@ -25,7 +25,6 @@ import {
   performAutoBackup,
   getDeviceId,
 } from '../utils/cloudStorage';
-import { testDataPreservation } from '../utils/storage';
 
 const BackupScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(false);
@@ -75,14 +74,14 @@ const BackupScreen = ({ navigation }) => {
   const handleExportData = async () => {
     setLoading(true);
     try {
-      console.log('📤 Exporting data to file...');
+      console.log('📤 Exporting data to PDF...');
       const exportResult = await exportDataToFile();
       
       if (exportResult.success) {
-        // Share the file
+        // Share the PDF file
         if (Platform.OS !== 'web' && await Sharing.isAvailableAsync()) {
           await Sharing.shareAsync(exportResult.fileUri, {
-            mimeType: 'application/json',
+            mimeType: 'application/pdf',
             dialogTitle: 'Export MediCare Data',
           });
         }
@@ -90,7 +89,7 @@ const BackupScreen = ({ navigation }) => {
         showAlert({
           type: 'success',
           title: '📤 Data Exported Successfully!',
-          message: `Your data has been exported to: ${exportResult.fileName}`,
+          message: `Your data has been exported to PDF: ${exportResult.fileName}`,
           confirmText: 'OK',
         });
       } else {
@@ -190,36 +189,6 @@ const BackupScreen = ({ navigation }) => {
     }
   };
 
-  const handleTestDataPreservation = async () => {
-    setLoading(true);
-    try {
-      console.log('🧪 Testing data preservation system...');
-      const testResult = await testDataPreservation();
-      
-      if (testResult.success) {
-        showAlert({
-          type: 'success',
-          title: '✅ Data Preservation Test Successful!',
-          message: `Test completed successfully. Original: ${testResult.originalCount}, Restored: ${testResult.restoredCount} medicines.`,
-          confirmText: 'Great!',
-          onConfirm: () => loadBackupStats(),
-        });
-      } else {
-        throw new Error(testResult.error);
-      }
-    } catch (error) {
-      console.error('Test error:', error);
-      showAlert({
-        type: 'error',
-        title: 'Test Failed',
-        message: 'The data preservation test failed. Please try again.',
-        confirmText: 'Try Again',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const renderBackupStats = () => {
     if (!backupStats) return null;
 
@@ -237,24 +206,33 @@ const BackupScreen = ({ navigation }) => {
         <View style={styles.statRow}>
           <Ionicons name="cloud" size={20} color={backupStats.hasLocalBackup ? "#10B981" : "#6B7280"} />
           <Text style={styles.statText}>
-            Local Backup: {backupStats.hasLocalBackup ? "Available" : "Not Available"}
+            Manual Backup: {backupStats.manualBackupExists ? "Available" : "Not Available"}
           </Text>
         </View>
         
-        {backupStats.hasLocalBackup && (
+        {backupStats.manualBackupExists && (
           <View style={styles.statRow}>
             <Ionicons name="time" size={20} color="#F59E0B" />
             <Text style={styles.statText}>
-              Last Backup: {backupStats.lastBackupTime ? new Date(backupStats.lastBackupTime).toLocaleDateString() : "Unknown"}
+              Manual Backup Date: {backupStats.manualBackupTime ? new Date(backupStats.manualBackupTime).toLocaleDateString() : "Unknown"}
             </Text>
           </View>
         )}
         
-        {backupStats.hasLocalBackup && (
+        {backupStats.manualBackupExists && (
           <View style={styles.statRow}>
             <Ionicons name="archive" size={20} color="#8B5CF6" />
             <Text style={styles.statText}>
-              Backup Medicines: {backupStats.backupMedicineCount}
+              Manual Backup Medicines: {backupStats.manualBackupCount}
+            </Text>
+          </View>
+        )}
+        
+        {backupStats.lastBackupTime && !backupStats.manualBackupExists && (
+          <View style={styles.statRow}>
+            <Ionicons name="refresh" size={20} color="#4A90E2" />
+            <Text style={styles.statText}>
+              Last Auto Backup: {new Date(backupStats.lastBackupTime).toLocaleDateString()}
             </Text>
           </View>
         )}
@@ -318,8 +296,8 @@ const BackupScreen = ({ navigation }) => {
           
           {renderActionButton(
             'download',
-            'Export Data',
-            'Export data to shareable file',
+            'Export to PDF',
+            'Export data to shareable PDF file',
             handleExportData,
             '#8B5CF6'
           )}
@@ -330,14 +308,6 @@ const BackupScreen = ({ navigation }) => {
             'Restore data from local backup',
             handleRestoreFromBackup,
             '#EF4444'
-          )}
-          
-          {renderActionButton(
-            'flask',
-            'Test Data Preservation',
-            'Test the backup and restore system',
-            handleTestDataPreservation,
-            '#FF6B6B'
           )}
         </View>
 

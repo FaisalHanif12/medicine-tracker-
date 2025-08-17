@@ -375,17 +375,6 @@ const ViewMedicinesScreen = ({ navigation }) => {
         <Ionicons name="add" size={20} color="#FFFFFF" />
         <Text style={styles.emptyButtonText}>Add First Medicine</Text>
       </TouchableOpacity>
-      
-      <TouchableOpacity
-        style={[styles.emptyButton, { backgroundColor: '#4A90E2', marginTop: 12 }]}
-        onPress={() => {
-          console.log('🔒 Backup button pressed from empty state');
-          navigation.navigate('Backup');
-        }}
-      >
-        <Ionicons name="cloud-upload" size={20} color="#FFFFFF" />
-        <Text style={styles.emptyButtonText}>🔒 Data Backup</Text>
-      </TouchableOpacity>
     </View>
   );
 
@@ -441,16 +430,6 @@ const ViewMedicinesScreen = ({ navigation }) => {
                     <Text style={styles.headerTitle}>Animal Care Hub</Text>
                   </View>
                   <View style={styles.headerButtons}>
-                    <TouchableOpacity 
-                      style={styles.headerButton}
-                      onPress={() => {
-                        console.log('🔒 Backup button pressed - navigating to Backup screen');
-                        navigation.navigate('Backup');
-                      }}
-                      activeOpacity={0.8}
-                    >
-                      <Ionicons name="cloud-upload" size={24} color="#4A90E2" />
-                    </TouchableOpacity>
                     <TouchableOpacity 
                       style={styles.favoritesButton}
                       onPress={() => navigation.navigate('Favorites')}
