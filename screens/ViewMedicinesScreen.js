@@ -12,6 +12,7 @@ import {
   ScrollView,
   StatusBar,
   Animated,
+  TextInput,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons, MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
@@ -26,6 +27,7 @@ const ViewMedicinesScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedType, setSelectedType] = useState('All'); // 'All', 'medicine', 'desi_totka'
+  const [searchQuery, setSearchQuery] = useState('');
   const scrollY = new Animated.Value(0);
   const { showAlert, AlertComponent } = useCustomAlert();
 
@@ -76,6 +78,13 @@ const ViewMedicinesScreen = ({ navigation }) => {
 
   const getFilteredMedicines = () => {
     let filtered = medicines;
+    
+    // Filter by search query (name search)
+    if (searchQuery.trim()) {
+      filtered = filtered.filter(m => 
+        m.name.toLowerCase().includes(searchQuery.toLowerCase().trim())
+      );
+    }
     
     // Filter by type (Medicine/Desi Totka)
     if (selectedType !== 'All') {
@@ -444,6 +453,30 @@ const ViewMedicinesScreen = ({ navigation }) => {
               </View>
             </View>
 
+            {/* Search Bar */}
+            <View style={styles.searchSection}>
+              <View style={styles.searchContainer}>
+                <Ionicons name="search" size={20} color="#6B7280" style={styles.searchIcon} />
+                <TextInput
+                  style={styles.searchInput}
+                  placeholder="Search by name..."
+                  placeholderTextColor="#9CA3AF"
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+                {searchQuery.length > 0 && (
+                  <TouchableOpacity
+                    style={styles.clearSearchButton}
+                    onPress={() => setSearchQuery('')}
+                  >
+                    <Ionicons name="close-circle" size={20} color="#6B7280" />
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+
             {/* Type Filter */}
             <View style={styles.filterSection}>
               <Text style={styles.filterTitle}>Filter by Type</Text>
@@ -460,15 +493,17 @@ const ViewMedicinesScreen = ({ navigation }) => {
             <View style={styles.medicineGrid}>
               <View style={styles.gridHeader}>
                 <Text style={styles.gridTitle}>
-                  {selectedType === 'All' 
-                    ? (selectedCategory === 'All' 
-                        ? `All Entries (${filteredMedicines.length})`
-                        : `${selectedCategory} Entries (${filteredMedicines.length})`
-                      )
-                    : (selectedCategory === 'All'
-                        ? `${selectedType === 'medicine' ? 'Medicines' : 'Desi Totka'} (${filteredMedicines.length})`
-                        : `${selectedCategory} ${selectedType === 'medicine' ? 'Medicines' : 'Desi Totka'} (${filteredMedicines.length})`
-                      )
+                  {searchQuery.trim() 
+                    ? `Search Results for "${searchQuery}" (${filteredMedicines.length})`
+                    : selectedType === 'All' 
+                      ? (selectedCategory === 'All' 
+                          ? `All Entries (${filteredMedicines.length})`
+                          : `${selectedCategory} Entries (${filteredMedicines.length})`
+                        )
+                      : (selectedCategory === 'All' 
+                          ? `${selectedType === 'medicine' ? 'Medicines' : 'Desi Totka'} (${filteredMedicines.length})`
+                          : `${selectedCategory} ${selectedType === 'medicine' ? 'Medicines' : 'Desi Totka'} (${filteredMedicines.length})`
+                        )
                   }
                 </Text>
                 <TouchableOpacity style={styles.sortButton}>
@@ -619,6 +654,43 @@ const styles = StyleSheet.create({
     color: '#C7D2FE',
     marginTop: 4,
     textAlign: 'center',
+  },
+
+  // Search Section
+  searchSection: {
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  searchIcon: {
+    marginRight: 12,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    color: '#374151',
+    paddingVertical: 0,
+  },
+  clearSearchButton: {
+    marginLeft: 8,
+    padding: 4,
   },
 
   // Filter Section
