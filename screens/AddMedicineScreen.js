@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -17,6 +17,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { saveMedicine } from '../utils/storage';
 import { useCustomAlert } from '../components/CustomAlert';
+import ImagePickerModal from '../components/ImagePickerModal';
 
 const { width } = Dimensions.get('window');
 
@@ -29,9 +30,23 @@ const AddMedicineScreen = ({ navigation }) => {
   const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [showImagePickerModal, setShowImagePickerModal] = useState(false);
   const { showAlert, AlertComponent } = useCustomAlert();
 
   const animalTypes = ['Cow', 'Goat', 'Hyfer', 'Buffalo', 'Sheep'];
+
+  // Debug logging for component lifecycle
+  useEffect(() => {
+    console.log('🔄 AddMedicineScreen mounted');
+    return () => {
+      console.log('🔄 AddMedicineScreen unmounted');
+    };
+  }, []);
+
+  // Debug logging for images state changes
+  useEffect(() => {
+    console.log('📸 Images state changed:', images);
+  }, [images]);
 
   const validateForm = () => {
     const newErrors = {};
@@ -71,14 +86,15 @@ const AddMedicineScreen = ({ navigation }) => {
       return;
     }
 
-    // Use gallery only for all platforms (camera removed due to stability issues)
-    pickFromGallery();
+    setShowImagePickerModal(true);
   };
 
   const pickFromGallery = async () => {
+    setShowImagePickerModal(false);
+    
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ['images'],
         allowsEditing: true,
         aspect: [4, 3],
         quality: 0.8,
@@ -90,12 +106,12 @@ const AddMedicineScreen = ({ navigation }) => {
         const imageUri = result.assets[0].uri;
         if (imageUri) {
           setImages([...images, imageUri]);
-          // Clear image error if exists
-          if (errors.images) {
-            setErrors({ ...errors, images: null });
-          }
+        // Clear image error if exists
+        if (errors.images) {
+          setErrors({ ...errors, images: null });
+        }
         } else {
-          showAlert({
+        showAlert({
             type: 'warning',
             title: 'Image Issue',
             message: 'The image was selected but couldn\'t be processed. Please try again.',
@@ -114,10 +130,87 @@ const AddMedicineScreen = ({ navigation }) => {
     }
   };
 
+  const launchCamera = async () => {
+    console.log('🎥 Camera function started');
+    
+    try {
+      console.log('🔐 Requesting camera permissions...');
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      console.log('📋 Camera permission status:', status);
+      
+      if (status !== 'granted') {
+        console.log('❌ Camera permission denied');
+        showAlert({
+          type: 'error',
+          title: 'Camera Permission Required',
+          message: 'Please allow camera access to take photos.',
+          confirmText: 'OK',
+        });
+        return;
+      }
+
+      console.log('📷 Launching camera...');
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ['images'],
+        allowsEditing: false,
+        quality: 0.1,
+        base64: false,
+        exif: false,
+      });
+
+      console.log('📸 Camera result:', result);
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const imageUri = result.assets[0].uri;
+        console.log('🖼️ Image URI received:', imageUri);
+        
+        if (imageUri) {
+          console.log('✅ Adding image to state...');
+          
+          // Add a small delay to prevent app refresh
+          setTimeout(() => {
+            try {
+              setImages(prevImages => {
+                const newImages = [...prevImages, imageUri];
+                console.log('📸 New images array:', newImages.length);
+                return newImages;
+              });
+              
+              if (errors.images) {
+                setErrors(prevErrors => ({ ...prevErrors, images: null }));
+              }
+              
+              console.log('✅ Image added successfully');
+            } catch (stateError) {
+              console.error('State update error:', stateError);
+            }
+          }, 100);
+        } else {
+          showAlert({
+            type: 'warning',
+            title: 'Image Issue',
+            message: 'The image was taken but couldn\'t be processed. Please try again.',
+            confirmText: 'OK',
+          });
+        }
+      }
+    } catch (error) {
+      console.error('💥 Camera error:', error);
+      showAlert({
+        type: 'error',
+        title: 'Camera Error',
+        message: 'Camera is not available. Please use gallery instead.',
+        confirmText: 'Use Gallery',
+        onConfirm: () => pickFromGallery(),
+      });
+    }
+  };
+
   const removeImage = (index) => {
     const newImages = images.filter((_, i) => i !== index);
     setImages(newImages);
   };
+
 
   const handleSave = async () => {
     if (!validateForm()) {
@@ -335,10 +428,10 @@ const AddMedicineScreen = ({ navigation }) => {
           </View>
         )}
 
-        {/* Images - Only for Medicine */}
-        {category === 'medicine' && (
+        {/* Images - Optional for Desi Totka, Required for Medicine */}
+        {category === 'desi_totka' && (
           <View style={styles.formGroup}>
-            <Text style={styles.label}>📸 Images ({images.length}/3)</Text>
+            <Text style={styles.label}>📸 Images (Optional) - {images.length}/3</Text>
             
             <TouchableOpacity
               style={[styles.imagePickerButton, errors.images && styles.inputError]}
@@ -352,8 +445,8 @@ const AddMedicineScreen = ({ navigation }) => {
               />
               <Text style={[styles.imagePickerText, images.length >= 3 && styles.disabledText]}>
                 {images.length === 0 
-                  ? '🖼️ Add Photo (Gallery)' 
-                  : `🖼️ Add Photo (${3 - images.length} remaining)`
+                  ? '📸 Add Photo (Camera/Gallery) - Optional' 
+                  : `📸 Add Photo (${3 - images.length} remaining)`
                 }
               </Text>
             </TouchableOpacity>
@@ -362,12 +455,12 @@ const AddMedicineScreen = ({ navigation }) => {
               <Text style={styles.errorText}>{errors.images}</Text>
             )}
 
-            {/* Image Preview */}
+            {/* Display selected images */}
             {images.length > 0 && (
               <View style={styles.imagePreviewContainer}>
-                {images.map((uri, index) => (
-                  <View key={index} style={styles.imagePreview}>
-                    <Image source={{ uri }} style={styles.previewImage} />
+                {images.map((imageUri, index) => (
+                  <View key={index} style={styles.imagePreviewWrapper}>
+                    <Image source={{ uri: imageUri }} style={styles.imagePreview} />
                     <TouchableOpacity
                       style={styles.removeImageButton}
                       onPress={() => removeImage(index)}
@@ -379,6 +472,53 @@ const AddMedicineScreen = ({ navigation }) => {
               </View>
             )}
           </View>
+        )}
+
+        {/* Images - Only for Medicine */}
+        {category === 'medicine' && (
+        <View style={styles.formGroup}>
+            <Text style={styles.label}>📸 Images ({images.length}/3)</Text>
+          
+          <TouchableOpacity
+            style={[styles.imagePickerButton, errors.images && styles.inputError]}
+            onPress={showImagePicker}
+            disabled={images.length >= 3}
+          >
+            <Ionicons
+                name="images-outline"
+              size={24}
+              color={images.length >= 3 ? '#ccc' : '#4A90E2'}
+            />
+            <Text style={[styles.imagePickerText, images.length >= 3 && styles.disabledText]}>
+                {images.length === 0 
+                  ? '📸 Add Photo (Camera/Gallery)' 
+                  : `📸 Add Photo (${3 - images.length} remaining)`
+                }
+            </Text>
+          </TouchableOpacity>
+
+
+          {errors.images && (
+            <Text style={styles.errorText}>{errors.images}</Text>
+          )}
+
+          {/* Image Preview */}
+          {images.length > 0 && (
+            <View style={styles.imagePreviewContainer}>
+              {images.map((uri, index) => (
+                <View key={index} style={styles.imagePreview}>
+                  <Image source={{ uri }} style={styles.previewImage} />
+                  <TouchableOpacity
+                    style={styles.removeImageButton}
+                    onPress={() => removeImage(index)}
+                  >
+                    <Ionicons name="close-circle" size={24} color="#FF4444" />
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </View>
+          )}
+        </View>
         )}
 
         {/* Save Button */}
@@ -399,6 +539,19 @@ const AddMedicineScreen = ({ navigation }) => {
           )}
         </TouchableOpacity>
       </View>
+      
+      <ImagePickerModal
+        visible={showImagePickerModal}
+        onClose={() => setShowImagePickerModal(false)}
+        onCamera={() => {
+          setShowImagePickerModal(false);
+          // Use the old camera function but with better error handling
+          launchCamera();
+        }}
+        onGallery={pickFromGallery}
+      />
+      
+      
       <AlertComponent />
     </ScrollView>
   );

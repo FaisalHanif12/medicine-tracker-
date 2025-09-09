@@ -16,6 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { deleteMedicine, updateMedicine } from '../utils/storage';
 import { useCustomAlert } from '../components/CustomAlert';
+import ImagePickerModal from '../components/ImagePickerModal';
 import * as ImagePicker from 'expo-image-picker';
 import { Picker } from '@react-native-picker/picker';
 
@@ -27,6 +28,7 @@ const MedicineDetailScreen = ({ route, navigation }) => {
   const [imageModalVisible, setImageModalVisible] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editedMedicine, setEditedMedicine] = useState(medicine);
+  const [showImagePickerModal, setShowImagePickerModal] = useState(false);
   const { showAlert, AlertComponent } = useCustomAlert();
 
   const getAnimalIcon = (animal) => {
@@ -123,16 +125,17 @@ const MedicineDetailScreen = ({ route, navigation }) => {
       return;
     }
 
-    // Use gallery only for all platforms (camera removed due to stability issues)
-    pickFromGalleryEdit();
+    setShowImagePickerModal(true);
   };
 
 
 
   const pickFromGalleryEdit = async () => {
+    setShowImagePickerModal(false);
+    
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ['images'],
         allowsEditing: true,
         aspect: [4, 3],
         quality: 0.8,
@@ -143,8 +146,12 @@ const MedicineDetailScreen = ({ route, navigation }) => {
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const imageUri = result.assets[0].uri;
         if (imageUri) {
-          const newImages = [...(editedMedicine.images || []), imageUri];
-          setEditedMedicine(prev => ({ ...prev, images: newImages }));
+          // Save the image permanently
+          const permanentUri = await saveImagePermanently(imageUri);
+          setEditedMedicine(prev => ({
+            ...prev,
+            images: [...(prev.images || []), permanentUri]
+          }));
         } else {
           showAlert({
             type: 'warning',
@@ -161,6 +168,66 @@ const MedicineDetailScreen = ({ route, navigation }) => {
         title: 'Gallery Error',
         message: 'We couldn\'t access your gallery. Please try again.',
         confirmText: 'Try Again',
+      });
+    }
+  };
+
+  const launchCameraEdit = async () => {
+    try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') {
+        showAlert({
+          type: 'error',
+          title: 'Camera Permission Required',
+          message: 'Please allow camera access to take photos.',
+          confirmText: 'OK',
+        });
+        return;
+      }
+
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ['images'],
+        allowsEditing: false,
+        quality: 0.1,
+        base64: false,
+        exif: false,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const imageUri = result.assets[0].uri;
+        if (imageUri) {
+          // Save the image permanently
+          const permanentUri = await saveImagePermanently(imageUri);
+          
+          // Add a small delay to prevent app refresh
+          setTimeout(() => {
+            try {
+              setEditedMedicine(prev => ({
+                ...prev,
+                images: [...(prev.images || []), permanentUri]
+              }));
+              console.log('✅ Image added to edit successfully');
+            } catch (stateError) {
+              console.error('State update error in edit:', stateError);
+            }
+          }, 100);
+        } else {
+          showAlert({
+            type: 'warning',
+            title: 'Image Issue',
+            message: 'The image was taken but couldn\'t be processed. Please try again.',
+            confirmText: 'OK',
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Camera error:', error);
+      showAlert({
+        type: 'error',
+        title: 'Camera Error',
+        message: 'Camera is not available. Please use gallery instead.',
+        confirmText: 'Use Gallery',
+        onConfirm: () => pickFromGalleryEdit(),
       });
     }
   };
@@ -462,6 +529,18 @@ const MedicineDetailScreen = ({ route, navigation }) => {
           </TouchableOpacity>
         </View>
       </Modal>
+      
+      <ImagePickerModal
+        visible={showImagePickerModal}
+        onClose={() => setShowImagePickerModal(false)}
+        onCamera={() => {
+          setShowImagePickerModal(false);
+          launchCameraEdit();
+        }}
+        onGallery={pickFromGalleryEdit}
+      />
+      
+      
       <AlertComponent />
     </ScrollView>
   );
